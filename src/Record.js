@@ -20,14 +20,6 @@ define(
 			// Define missing indicator
 			this.missing = missing || false;
 
-			// Define the next record pointer
-			this.nextRecord = null;
-
-			// Set the next record reference for the previous record, if exists
-			if (this.previousRecord !== null) {
-				this.previousRecord.setNextRecord(this);
-			}
-
 			// Define starting state
 			this.startingState = 0;
 
@@ -66,10 +58,6 @@ define(
 
 			// TODO: implement loop detection
 		}
-
-		Record.prototype.setNextRecord = function (nextRecord) {
-			this.nextRecord = nextRecord;
-		};
 
 		Record.prototype.getTargetState = function () {
 			return this.targetState;

@@ -64,6 +64,16 @@ define(
 		}
 
 		/**
+		 * Checks whether or not the input is over.
+		 *
+		 * @param automaton
+		 * @returns {boolean|*}
+		 */
+		function isInputOver (automaton) {
+			return automaton.inputOver;
+		}
+
+		/**
 		 * Get and buffer the next input item
 		 *
 		 * @param automaton
@@ -72,20 +82,20 @@ define(
 		function saveNextInputItem (automaton, input) {
 
 			// If input is not yet over
-			if (!this.inputOver) {
+			if (!isInputOver(automaton)) {
 
 				// Get the first input item
 				var inputItem = input();
 
 				// If next input exists
-				if (inputItem !== undefined) {
+				if (inputItem !== null) {
 
 					// Save input item to the buffer
 					writeToInputBuffer(automaton, inputItem);
 				} else {
 
 					// State that input is over
-					this.inputOver = true;
+					automaton.inputOver = true;
 				}
 			}
 		}
@@ -110,6 +120,16 @@ define(
 		function getInputItemById (automaton, id) {
 			// Return the input item
 			return automaton.inputBuffer[id];
+		}
+
+		/**
+		 * Returns current size of the input buffer.
+		 *
+		 * @param automaton
+		 * @returns {Number}
+		 */
+		function getInputBufferSize (automaton) {
+			return automaton.inputBuffer.length;
 		}
 
 		/**
@@ -214,6 +234,35 @@ define(
 		}
 
 		/**
+		 * Create a partially missing record.
+		 *
+		 * @param previousRecord
+		 * @param characters
+		 * @param targetState
+		 * @param excludedCharacter
+		 * @returns {Record}
+		 */
+		function createPartiallyMissingRecord (previousRecord, characters, targetState, excludedCharacter) {
+
+			// Save the next state index in the current reverse transition
+			var excludedCharacterIndex = characters.indexOf(excludedCharacter);
+
+			// Create array of missing characters
+			var partialCharacters = characters.slice();
+
+			// Cut off the accepted character
+			partialCharacters.splice(excludedCharacterIndex, 1);
+
+			// Return the new missing record
+			return createMissingRecord(
+				previousRecord,
+				partialCharacters,
+				targetState
+			);
+
+		}
+
+		/**
 		 * Get transitions for a state.
 		 *
 		 * @param currentState
@@ -240,15 +289,33 @@ define(
 		 * @param record
 		 * @returns {*}
 		 */
-		function getNextInputItemForRecord (automaton, record) {
+		function getNextInputItemForRecord (automaton, input, record) {
+
+			// Get the current input buffer length of the automaton
+			var inputBufferLength = getInputBufferLength(automaton);
 
 			// Get the amount of characters accepted till the current record
 			var acceptedRecordsCount = record.getAcceptedCount();
+
+			// If the buffer length is less than or equal to the current tail record accepted count
+			if (inputBufferLength <= acceptedRecordsCount) {
+
+				// Grab more input
+				saveNextInputItem(automaton, input);
+			}
 
 			// Get the proper input item
 			return getInputItemById(automaton, acceptedRecordsCount);
 		}
 
+		/**
+		 * Get the next state for a given state and input.
+		 * 
+		 * @param automaton
+		 * @param currentState
+		 * @param inputItem
+		 * @returns {*}
+		 */
 		function getNextState (automaton, currentState, inputItem) {
 
 			// Get transitions info array for the current state
@@ -258,46 +325,82 @@ define(
 			return currentStateTransitions[inputItem];
 		}
 
-		function tryGettingMoreInputIfRequired (automaton, input, record) {
-			// Get the current input buffer length of the automaton
-			var inputBufferLength = getInputBufferLength(automaton);
+		/**
+		 * Check whether or not a record is final.
+		 *
+		 * @param automaton
+		 * @param input
+		 * @param record
+		 * @returns {boolean|*}
+		 */
+		function isRecordFinal (automaton, input, record) {
 
-			// Get the current tail record accepted records count
-			var currentTailRecordAcceptedCount = record.getAcceptedCount();
+			// Indicator of record finality
+			var recordFinal = false;
 
-			// If the buffer length is less than or equal to the current tail record accepted count
-			if (inputBufferLength <= currentTailRecordAcceptedCount) {
+			// Is record's target state final?
+			var targetStateFinal = isStateFinal(automaton, record.targetState);
 
-				// Grab more input
+			// Save record's accepted count
+			var recordAcceptedCount = record.getAcceptedCount();
+
+			// Save the input size
+			var inputBufferSize = getInputBufferSize(automaton);
+
+			// If the record's target state is final and all the input has been accepted by it
+			if (targetStateFinal && (recordAcceptedCount === inputBufferSize)) {
+				// Try getting more input
 				saveNextInputItem(automaton, input);
+
+				// Is input over?
+				var inputOver = isInputOver(automaton);
+
+				// If input is over
+				if (inputOver) {
+
+					// Record is final
+					recordFinal = true;
+				}
 			}
+
+			// Return whether or not a record is final
+			return recordFinal;
 		}
 
 		/**
-		 * Execute all tail records in a single generation.
+		 * Save record as final.
 		 *
-		 * @param tailRecords
-		 * @returns {Array}
+		 * @param automaton
+		 * @param record
 		 */
-		function executeTails (automaton, tailRecords, input) {
+		function saveFinalRecord (automaton, record) {
+			automaton.finalRecords.push(record);
+		}
+
+		/**
+		 * Executes a single tail, returns its derivatives.
+		 *
+		 * @param automaton
+		 * @param tailRecord
+		 * @param input
+		 */
+		function executeTail (automaton, tailRecord, input) {
 
 			// Create new tail records array
-			var newTailRecords = [];
+			var tailDerivatives = [];
 
-			// Save the amount of tail records
-			var tailRecordsCount = tailRecords.length;
+			// If the record appears final
+			if (isRecordFinal(automaton, input, tailRecord)) {
 
-			// Loop over the tail records
-			for (var currentTailRecordId = 0; currentTailRecordId < tailRecordsCount; currentTailRecordId ++) {
-
-				// Save the current record reference
-				var currentTailRecord = tailRecords[currentTailRecordId];
+				// Save it as final
+				saveFinalRecord(automaton, tailRecord);
+			} else {
 
 				// Save the current state number
-				var currentState = currentTailRecord.getTargetState();
+				var currentState = tailRecord.getTargetState();
 
 				// Get the next input item for the current record
-				var nextInputItem = getNextInputItemForRecord(automaton, currentTailRecord);
+				var nextInputItem = getNextInputItemForRecord(automaton, input, tailRecord);
 
 				// Get the next state for the record
 				var nextState = getNextState(automaton, currentState, nextInputItem);
@@ -317,30 +420,21 @@ define(
 					// Add a new accept record for the accepted transition
 
 					// Create a new accept record
-					var newAcceptRecord = createAcceptRecord(currentTailRecord, nextInputItem, nextState);
+					var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
 
-					// Add the new accept record to the new tail records
-					newTailRecords.push(newAcceptRecord);
-
-					// Try getting more input if required
-					tryGettingMoreInputIfRequired(automaton, input, newAcceptRecord);
+					// Add the new accept record to the tail derivatives
+					tailDerivatives.push(newAcceptRecord);
 
 					// Add a new missing record for a missing-input transition
 
-					// Save the position of the
-					var reverseTransitionWithAcceptedComponent = currentStateReverseTransitions[nextStateAsString];
-
-					// Save the next state index in the current reverse transition
-					var nextStateIndex = reverseTransitionWithAcceptedComponent.indexOf(nextStateAsString);
-
-					// Create the characters array for missing record
-					var partiallyMissingRecordCharacters = reverseTransitionWithAcceptedComponent.slice().splice(nextStateIndex, 1);
+					// Save the reverse transition to which current input item belongs
+					var reverseTransition = currentStateReverseTransitions[nextStateAsString];
 
 					// Create missing record for reverse transition except for the accepted transition
-					var newPartiallyMissingRecord = createMissingRecord(currentTailRecord, partiallyMissingRecordCharacters, nextState);
+					var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord, reverseTransition, nextState, nextInputItem);
 
-					// Add the new missing record to the new tail records
-					newTailRecords.push(newPartiallyMissingRecord);
+					// Add the new partially missing record to the tail derivatives
+					tailDerivatives.push(newPartiallyMissingRecord);
 
 				}
 
@@ -353,7 +447,7 @@ define(
 				var reverseTransitionsCount = reverseTransitionsKeys.length;
 
 				// Iterate over reverse transitions
-				for (var j = 0; j < reverseTransitionsCount; j ++) {
+				for (var j = 0; j < reverseTransitionsCount; j++) {
 
 					// Save current reverse transition key
 					var currentReverseTransitionKey = reverseTransitionsKeys[j];
@@ -364,20 +458,50 @@ define(
 						// Save reference to the current reverse transition
 						var currentReverseTransition = currentStateReverseTransitions[currentReverseTransitionKey];
 
-						// Create missing record for reverse transition
-						var nextMissingRecord = createMissingRecord(currentTailRecord, currentReverseTransition, nextState);
+						// Save the current reverse transition state
+						var currentReverseTransitionState = parseInt(currentReverseTransitionKey);
 
-						// Add the new missing record to the new tail records
-						newTailRecords.push(nextMissingRecord);
+						// Create missing record for reverse transition
+						var nextMissingRecord = createMissingRecord(tailRecord, currentReverseTransition, currentReverseTransitionState);
+
+						// Add the next missing record to the tail derivatives
+						tailDerivatives.push(nextMissingRecord);
 					}
 				}
+			}
 
-				// TODO: Request more input when needed
+			// TODO: Detect loops in the records chains and drop records in case of loops detected
 
-				// TODO: If a newly-added record could be classified as final, add to final records array
-				// Final means input is over while a tail is in the final state
+			return tailDerivatives;
+		}
 
-				// TODO: Detect loops in the records chains and drop records in case of loops detected
+		/**
+		 * Execute all tail records in a single generation.
+		 *
+		 * @param automaton
+		 * @param tailRecords
+		 * @param input
+		 * @returns {Array}
+		 */
+		function executeTails (automaton, tailRecords, input) {
+
+			// Create new tail records array
+			var newTailRecords = [];
+
+			// Save the amount of tail records
+			var tailRecordsCount = tailRecords.length;
+
+			// Loop over the tail records
+			for (var currentTailRecordId = 0; currentTailRecordId < tailRecordsCount; currentTailRecordId ++) {
+
+				// Save the current record reference
+				var currentTailRecord = tailRecords[currentTailRecordId];
+
+				// Execute the current tail record and get its derivatives
+				var currentTailDerivatives = executeTail(automaton, currentTailRecord, input);
+
+				// Concat tail derivatives to the new tail records
+				newTailRecords = newTailRecords.concat(currentTailDerivatives);
 			}
 
 			return newTailRecords;
@@ -394,11 +518,8 @@ define(
 			// Reset the automaton to initial state
 			reset(this);
 
-			// Get the next input item
-			saveNextInputItem(this, input);
-
 			// Create an initial record
-			var initialRecord = new Record(null, 0, 0, [''], false, 0, 0);
+			var initialRecord = new Record(null, 0, [''], false);
 
 			// Create array for tailing records
 			var tailRecords = [initialRecord];

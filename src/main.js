@@ -23,14 +23,14 @@ define(
 
 			var transitions = [
 				{"a": 1, "b": 1, "c": 2, "d": 2},
-				{"e": 3},
+				{"a": 3, "e": 3},
 				{"f": 3},
 				{}
 			];
 
 			var reverseTransitions = [
 				{"1": ["a", "b"], "2": ["c", "d"]},
-				{"3": ["e"]},
+				{"3": ["a", "e"]},
 				{"3": ["f"]},
 				{}
 			];
@@ -39,7 +39,7 @@ define(
 
 			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
 
-			automaton.execute(createInput("a"));
+			console.log("Result:", automaton.execute(createInput("a")));
 		}
 
 		testAutomaton();
