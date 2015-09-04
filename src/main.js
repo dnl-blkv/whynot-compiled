@@ -17,6 +17,43 @@ define(
 			};
 		}
 
+		/**
+		 * Create reverse transition table out of a given transition table.
+		 *
+		 * @param transitions
+		 * @returns {Array}
+		 */
+		function createReverseTransitions (transitions) {
+
+			var reverseTransitions = [];
+
+			var statesCount = transitions.length;
+
+			for (var stateNumber = 0; stateNumber < statesCount; stateNumber ++) {
+				reverseTransitions[stateNumber] = {};
+
+				var stateTransitionKeys = Object.keys(transitions[stateNumber]);
+
+				var stateTransitionKeysCount = stateTransitionKeys.length;
+
+				for (var stateTransitionKeyId = 0; stateTransitionKeyId < stateTransitionKeysCount; stateTransitionKeyId ++) {
+					var stateTransitionKey = stateTransitionKeys[stateTransitionKeyId];
+
+					var transition = transitions[stateNumber][stateTransitionKey];
+
+					var transitionString = transition + '';
+
+					if (reverseTransitions[stateNumber][transitionString] === undefined) {
+						reverseTransitions[stateNumber][transitionString] = [];
+					}
+
+					reverseTransitions[stateNumber][transitionString].push(stateTransitionKey);
+				}
+			}
+
+			return reverseTransitions;
+		}
+
 		function testAutomaton () {
 
 			var initialState = 0;
@@ -28,18 +65,13 @@ define(
 				{}
 			];
 
-			var reverseTransitions = [
-				{"1": ["a", "b"], "2": ["c", "d"]},
-				{"3": ["a", "e"]},
-				{"3": ["f"]},
-				{}
-			];
+			var reverseTransitions = createReverseTransitions(transitions);
 
 			var finalStates = [3];
 
 			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
 
-			console.log("Result:", automaton.execute(createInput("a")));
+			console.log("Result:", automaton.execute(createInput("aa")));
 		}
 
 		testAutomaton();

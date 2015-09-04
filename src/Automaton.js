@@ -310,7 +310,7 @@ define(
 
 		/**
 		 * Get the next state for a given state and input.
-		 * 
+		 *
 		 * @param automaton
 		 * @param currentState
 		 * @param inputItem
