@@ -6,7 +6,7 @@ define(
 	function() {
 		'use strict';
 
-		function Record (previousRecord, targetState, characters, missing) {
+		function Record (previousRecord, targetState, characters, accepted) {
 
 			// Define previous record pointer
 			this.previousRecord = previousRecord || null;
@@ -17,10 +17,10 @@ define(
 			// Define characters
 			this.characters = characters || '';
 
-			// Define missing indicator
-			this.missing = missing || false;
+			// Define accepted indicator
+			this.accepted = accepted || false;
 
-			// Define missing characters counter
+			// Define accepted characters counter
 			this.missingCount = 0;
 
 			// Define accepted characters counter
@@ -29,14 +29,14 @@ define(
 			// If the previous record is defined
 			if (this.previousRecord !== null) {
 
-				// Copy the missing count
+				// Copy the accepted count
 				this.missingCount = this.previousRecord.getMissingCount();
 
 				// Copy the accepted count
 				this.acceptedCount = this.previousRecord.getAcceptedCount();
 
 				// Increase the corresponding counter
-				this.missing ? ++ this.missingCount : ++ this.acceptedCount;
+				this.accepted ? ++ this.acceptedCount: ++ this.missingCount;
 			}
 
 			// TODO: implement loop detection
@@ -50,8 +50,8 @@ define(
 			return this.characters;
 		}
 
-		Record.prototype.isMissing = function () {
-			return this.missing;
+		Record.prototype.getAccepted = function () {
+			return this.accepted;
 		}
 
 		Record.prototype.getTargetState = function () {
@@ -68,32 +68,38 @@ define(
 
 		Record.prototype.hasLoops = function () {
 
-			// TODO: Probably use for creation of a pre-cached loop-map
-			// TODO: Further use the loop-map instead of this slow loop detection
-
+			// Define a loops presence flag
 			var hasLoops = false;
 
-			var record = this;
+			// Save the current state
+			var currentState = this.getTargetState();
 
-			var state = record.getTargetState();
+			// Save the earlier state reference
+			var earlierRecord = this.getPreviousRecord();
 
-			var previousRecord = record.getPreviousRecord();
+			// If earlier record exists
+			if(!this.getAccepted()) {
+				while (earlierRecord !== null) {
+					var earlierState = earlierRecord.getTargetState();
 
-			var previousState = (previousRecord === null) ? -1 : previousRecord.getTargetState();
+					if (earlierState === currentState) {
 
-			while ((record.getPreviousRecord() !== null) && (record.isMissing() === true)) {
+						console.log("Loop broken in state: " + earlierState);
 
-				if (state === previousState) {
-					console.log("Loop state: " + state);
+						hasLoops = true;
 
-					hasLoops = true;
+						break;
+					}
+
+					if (earlierRecord.getAccepted()) {
+						break;
+					}
+
+					earlierRecord = earlierRecord.getPreviousRecord();
 				}
-
-				record = record.getPreviousRecord();
-
-				previousState = previousRecord === null ? 0 : previousRecord.getTargetState();
 			}
 
+			// Return the flag determining the loops presence
 			return hasLoops;
 		}
 

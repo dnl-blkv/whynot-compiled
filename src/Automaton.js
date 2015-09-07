@@ -133,16 +133,6 @@ define(
 		}
 
 		/**
-		 * Add a record to final records array.
-		 *
-		 * @param automaton
-		 * @param finalRecord
-		 */
-		function addFinalRecord (automaton, finalRecord) {
-			automaton.finalRecords.push(finalRecord);
-		}
-
-		/**
 		 * Reset the input buffer.
 		 *
 		 * @param automaton
@@ -209,12 +199,12 @@ define(
 				previousRecord,
 				targetState,
 				[character],
-				false
+				true
 			);
 		}
 
 		/**
-		 * Create and return a new missing record.
+		 * Create and return a new accepted record.
 		 *
 		 * @param previousRecord
 		 * @param characters
@@ -223,18 +213,18 @@ define(
 		 */
 		function createMissingRecord (previousRecord, characters, targetState) {
 
-			// Return the new missing record
+			// Return the new accepted record
 			return new Record (
 				previousRecord,
 				targetState,
 				characters,
-				true
+				false
 			);
 
 		}
 
 		/**
-		 * Create a partially missing record.
+		 * Create a partially accepted record.
 		 *
 		 * @param previousRecord
 		 * @param characters
@@ -247,13 +237,13 @@ define(
 			// Save the next state index in the current reverse transition
 			var excludedCharacterIndex = characters.indexOf(excludedCharacter);
 
-			// Create array of missing characters
+			// Create array of accepted characters
 			var partialCharacters = characters.slice();
 
 			// Cut off the accepted character
 			partialCharacters.splice(excludedCharacterIndex, 1);
 
-			// Return the new missing record
+			// Return the new accepted record
 			return createMissingRecord(
 				previousRecord,
 				partialCharacters,
@@ -286,6 +276,7 @@ define(
 		 * Get a next input item taking a given record's accepted characters history.
 		 *
 		 * @param automaton
+		 * @param input
 		 * @param record
 		 * @returns {*}
 		 */
@@ -389,8 +380,11 @@ define(
 			// Create new tail records array
 			var tailDerivatives = [];
 
+			// Check for loops
+			var loopFree = !tailRecord.hasLoops(automaton.initialState);
+
 			// If no loops detected in the record
-			if (!tailRecord.hasLoops()) {
+			if (loopFree) {
 
 				// If the record appears final
 				if (isRecordFinal(automaton, input, tailRecord)) {
@@ -428,20 +422,24 @@ define(
 						// Add the new accept record to the tail derivatives
 						tailDerivatives.push(newAcceptRecord);
 
-						// Add a new missing record for a missing-input transition
+						// Add a new accepted record for a accepted-input transition
 
 						// Save the reverse transition to which current input item belongs
 						var reverseTransition = currentStateReverseTransitions[nextStateAsString];
 
-						// Create missing record for reverse transition except for the accepted transition
-						var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord, reverseTransition, nextState, nextInputItem);
+						// If there are other possibilities to get to a required state except for the saved one
+						if (reverseTransition.length > 1) {
 
-						// Add the new partially missing record to the tail derivatives
-						tailDerivatives.push(newPartiallyMissingRecord);
+							// Create accepted record for reverse transition except for the accepted transition
+							var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord, reverseTransition, nextState, nextInputItem);
+
+							// Add the new partially accepted record to the tail derivatives
+							tailDerivatives.push(newPartiallyMissingRecord);
+						}
 
 					}
 
-					// Add the new missing records for all the missing transitions
+					// Add the new accepted records for all the accepted transitions
 
 					// Save reverse transition keys
 					var reverseTransitionsKeys = Object.keys(currentStateReverseTransitions);
@@ -464,10 +462,10 @@ define(
 							// Save the current reverse transition state
 							var currentReverseTransitionState = parseInt(currentReverseTransitionKey);
 
-							// Create missing record for reverse transition
+							// Create accepted record for reverse transition
 							var nextMissingRecord = createMissingRecord(tailRecord, currentReverseTransition, currentReverseTransitionState);
 
-							// Add the next missing record to the tail derivatives
+							// Add the next accepted record to the tail derivatives
 							tailDerivatives.push(nextMissingRecord);
 						}
 					}
@@ -521,7 +519,7 @@ define(
 			reset(this);
 
 			// Create an initial record
-			var initialRecord = new Record(null, 0, [''], false);
+			var initialRecord = new Record(null, this.initialState, [''], false);
 
 			// Create array for tailing records
 			var tailRecords = [initialRecord];

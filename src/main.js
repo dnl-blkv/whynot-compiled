@@ -35,22 +35,37 @@ define(
 
 			var initialState = 0;
 
-			var transitions = [{"a": 0, "b": 0, "c": 1}, {}];
+			var transitions = [
+				{"a": 1, "c": 2, "e": 3},
+				{"b": 0},
+				{"d": 0},
+				{"f": 0}
+			];
 
-			var finalStates = [1];
+			var finalStates = [2];
 
 			var reverseTransitions = createReverseTransitions(transitions);
 
 			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
 
-			var inputString = "babab";
+			var inputString = "abcad";
 
 			console.log("Input: " + inputString);
 			console.log("");
 
+			var t1 = timeNow();
+
 			var results = automaton.execute(createInput(inputString));
 
+			var t2 = timeNow();
+			console.log("Milliseconds taken: " + (t2 - t1));
+
 			printResults(results);
+		}
+
+		function timeNow () {
+			var d = new Date();
+			return d.getTime();
 		}
 
 		/**
@@ -100,7 +115,7 @@ define(
 
 			for (var resultId = 0; resultId < resultsCount; resultId ++) {
 
-				console.log("Result #" + resultId + ":");
+				console.log("\nResult #" + resultId + ":");
 
 				var currentRecord = results[resultId];
 
@@ -118,7 +133,7 @@ define(
 
 					var addPosition = currentRecord.getAcceptedCount() + currentRecord.getMissingCount() - 1;
 
-					reverseResults.unshift([currentRecord.isMissing(), currentRecord.getCharacters(), addPosition]);
+					reverseResults.unshift([currentRecord.getAccepted(), currentRecord.getCharacters(), addPosition]);
 
 					currentRecord = currentRecord.getPreviousRecord();
 				}
@@ -126,9 +141,9 @@ define(
 				var reverseResultsCount = reverseResults.length;
 
 				for (var reverseResultId = 0; reverseResultId < reverseResultsCount; reverseResultId ++) {
-					var charStatus = reverseResults[reverseResultId][0] ? "Missing" : "Matched";
+					var charStatus = reverseResults[reverseResultId][0] ? "Accepted" : "Missing";
 
-					var missingPosition = reverseResults[reverseResultId][0] ?
+					var missingPosition = !reverseResults[reverseResultId][0] ?
 					" to be added at position " + reverseResults[reverseResultId][2] : "";
 
 					console.log(charStatus, reverseResults[reverseResultId][1], missingPosition);
