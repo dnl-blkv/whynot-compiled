@@ -20,9 +20,6 @@ define(
 			// Define missing indicator
 			this.missing = missing || false;
 
-			// Define starting state
-			this.startingState = 0;
-
 			// Define missing characters counter
 			this.missingCount = 0;
 
@@ -32,40 +29,34 @@ define(
 			// If the previous record is defined
 			if (this.previousRecord !== null) {
 
-				// Set starting state to the target state of previous record
-				this.startingState = this.previousRecord.getTargetState();
+				// Copy the missing count
+				this.missingCount = this.previousRecord.getMissingCount();
 
-				// Set missing and accepted counts according to the missing flag
-				// If a character is missing
-				if (this.missing) {
+				// Copy the accepted count
+				this.acceptedCount = this.previousRecord.getAcceptedCount();
 
-					// Increment the missing count
-					this.missingCount = this.previousRecord.getMissingCount() + 1;
-
-					// Copy the accepted count
-					this.acceptedCount = this.previousRecord.getAcceptedCount();
-
-				// Else
-				} else {
-
-					// Copy the accepted count
-					this.missingCount = this.previousRecord.getAcceptedCount();
-
-					// Increment the missing count
-					this.acceptedCount = this.previousRecord.getAcceptedCount() + 1;
-				}
+				// Increase the corresponding counter
+				this.missing ? ++ this.missingCount : ++ this.acceptedCount;
 			}
 
 			// TODO: implement loop detection
 		}
 
+		Record.prototype.getPreviousRecord = function () {
+			return this.previousRecord;
+		}
+
+		Record.prototype.getCharacters = function () {
+			return this.characters;
+		}
+
+		Record.prototype.getMissing = function () {
+			return this.missing;
+		}
+
 		Record.prototype.getTargetState = function () {
 			return this.targetState;
 		};
-
-		Record.prototype.getStartingState = function () {
-			return this.startingState;
-		}
 
 		Record.prototype.getMissingCount = function () {
 			return this.missingCount;

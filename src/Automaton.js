@@ -386,8 +386,35 @@ define(
 		 */
 		function executeTail (automaton, tailRecord, input) {
 
+			// TODO: START DIRTY CODE
+			// TODO: Use for creation of a pre-cached loop-map
+			// TODO: Further use the loop-map instead of this slow loop detection
+
 			// Create new tail records array
 			var tailDerivatives = [];
+
+			var record = tailRecord;
+
+			var state = record.getTargetState();
+
+			var previousRecord = record.getPreviousRecord();
+
+			var previousState = previousRecord === null ? 0 : previousRecord.getTargetState();
+
+			while ((record.getPreviousRecord() !== null) && (record.getMissing() === true)) {
+
+				if (state === previousState) {
+
+					// TODO: Need a more simple return
+					return tailDerivatives;
+				}
+
+				record = record.getPreviousRecord();
+
+				previousState = previousRecord === null ? 0 : previousRecord.getTargetState();
+			}
+
+			// TODO: END DIRTY CODE
 
 			// If the record appears final
 			if (isRecordFinal(automaton, input, tailRecord)) {

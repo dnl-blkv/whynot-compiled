@@ -17,6 +17,42 @@ define(
 			};
 		}
 
+		function testAutomaton () {
+
+			//var initialState = 0;
+			//
+			//var transitions = [
+			//	{"a": 1, "b": 2},
+			//	{"d": 3},
+			//	{"c": 4},
+			//	{"e": 5, "f": 6},
+			//	{"d": 3},
+			//	{},
+			//	{}
+			//];
+			//
+			//var finalStates = [5, 6];
+
+			var initialState = 0;
+
+			var transitions = [{"a": 0, "b": 0, "c": 1}, {}];
+
+			var finalStates = [1];
+
+			var reverseTransitions = createReverseTransitions(transitions);
+
+			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
+
+			var inputString = "babab";
+
+			console.log("Input: " + inputString);
+			console.log("");
+
+			var results = automaton.execute(createInput(inputString));
+
+			printResults(results);
+		}
+
 		/**
 		 * Create reverse transition table out of a given transition table.
 		 *
@@ -54,24 +90,52 @@ define(
 			return reverseTransitions;
 		}
 
-		function testAutomaton () {
+		/**
+		 * Prints the results of an automaton execution.
+		 *
+		 * @param results
+		 */
+		function printResults (results) {
+			var resultsCount = results.length;
 
-			var initialState = 0;
+			for (var resultId = 0; resultId < resultsCount; resultId ++) {
 
-			var transitions = [
-				{"a": 1, "b": 1, "c": 2, "d": 2},
-				{"a": 3, "e": 3},
-				{"f": 3},
-				{}
-			];
+				console.log("Result #" + resultId + ":");
 
-			var reverseTransitions = createReverseTransitions(transitions);
+				var currentRecord = results[resultId];
 
-			var finalStates = [3];
+				console.log("Accepted: " + currentRecord.getAcceptedCount());
 
-			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
+				console.log("Missing: " + currentRecord.getMissingCount());
 
-			console.log("Result:", automaton.execute(createInput("aa")));
+				var reverseResults = [];
+
+				while (currentRecord !== null) {
+
+					if(currentRecord.getPreviousRecord() === null) {
+						break;
+					}
+
+					var addPosition = currentRecord.getAcceptedCount() + currentRecord.getMissingCount() - 1;
+
+					reverseResults.unshift([currentRecord.getMissing(), currentRecord.getCharacters(), addPosition]);
+
+					currentRecord = currentRecord.getPreviousRecord();
+				}
+
+				var reverseResultsCount = reverseResults.length;
+
+				for (var reverseResultId = 0; reverseResultId < reverseResultsCount; reverseResultId ++) {
+					var charStatus = reverseResults[reverseResultId][0] ? "Missing" : "Matched";
+
+					var missingPosition = reverseResults[reverseResultId][0] ?
+					" to be added at position " + reverseResults[reverseResultId][2] : "";
+
+					console.log(charStatus, reverseResults[reverseResultId][1], missingPosition);
+				}
+
+				console.log("");
+			}
 		}
 
 		testAutomaton();
