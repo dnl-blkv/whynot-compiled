@@ -386,118 +386,93 @@ define(
 		 */
 		function executeTail (automaton, tailRecord, input) {
 
-			// TODO: START DIRTY CODE
-			// TODO: Use for creation of a pre-cached loop-map
-			// TODO: Further use the loop-map instead of this slow loop detection
-
 			// Create new tail records array
 			var tailDerivatives = [];
 
-			var record = tailRecord;
+			// If no loops detected in the record
+			if (!tailRecord.hasLoops()) {
 
-			var state = record.getTargetState();
+				// If the record appears final
+				if (isRecordFinal(automaton, input, tailRecord)) {
 
-			var previousRecord = record.getPreviousRecord();
+					// Save it as final
+					saveFinalRecord(automaton, tailRecord);
+				} else {
 
-			var previousState = previousRecord === null ? 0 : previousRecord.getTargetState();
+					// Save the current state number
+					var currentState = tailRecord.getTargetState();
 
-			while ((record.getPreviousRecord() !== null) && (record.getMissing() === true)) {
+					// Get the next input item for the current record
+					var nextInputItem = getNextInputItemForRecord(automaton, input, tailRecord);
 
-				if (state === previousState) {
+					// Get the next state for the record
+					var nextState = getNextState(automaton, currentState, nextInputItem);
 
-					// TODO: Need a more simple return
-					return tailDerivatives;
-				}
+					// Save an indicator if there is a next state for current input item
+					var nextStateExists = (nextState !== undefined);
 
-				record = record.getPreviousRecord();
+					// Save reverse transitions for current state
+					var currentStateReverseTransitions = automaton.getStateReverseTransitions(currentState);
 
-				previousState = previousRecord === null ? 0 : previousRecord.getTargetState();
-			}
+					// Save the next state as a string index
+					var nextStateAsString = nextState + '';
 
-			// TODO: END DIRTY CODE
+					// If the next state exists
+					if (nextStateExists) {
 
-			// If the record appears final
-			if (isRecordFinal(automaton, input, tailRecord)) {
+						// Add a new accept record for the accepted transition
 
-				// Save it as final
-				saveFinalRecord(automaton, tailRecord);
-			} else {
+						// Create a new accept record
+						var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
 
-				// Save the current state number
-				var currentState = tailRecord.getTargetState();
+						// Add the new accept record to the tail derivatives
+						tailDerivatives.push(newAcceptRecord);
 
-				// Get the next input item for the current record
-				var nextInputItem = getNextInputItemForRecord(automaton, input, tailRecord);
+						// Add a new missing record for a missing-input transition
 
-				// Get the next state for the record
-				var nextState = getNextState(automaton, currentState, nextInputItem);
+						// Save the reverse transition to which current input item belongs
+						var reverseTransition = currentStateReverseTransitions[nextStateAsString];
 
-				// Save an indicator if there is a next state for current input item
-				var nextStateExists = (nextState !== undefined);
+						// Create missing record for reverse transition except for the accepted transition
+						var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord, reverseTransition, nextState, nextInputItem);
 
-				// Save reverse transitions for current state
-				var currentStateReverseTransitions = automaton.getStateReverseTransitions(currentState);
+						// Add the new partially missing record to the tail derivatives
+						tailDerivatives.push(newPartiallyMissingRecord);
 
-				// Save the next state as a string index
-				var nextStateAsString = nextState + '';
+					}
 
-				// If the next state exists
-				if (nextStateExists) {
+					// Add the new missing records for all the missing transitions
 
-					// Add a new accept record for the accepted transition
+					// Save reverse transition keys
+					var reverseTransitionsKeys = Object.keys(currentStateReverseTransitions);
 
-					// Create a new accept record
-					var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
+					// Save reverse transitions amount
+					var reverseTransitionsCount = reverseTransitionsKeys.length;
 
-					// Add the new accept record to the tail derivatives
-					tailDerivatives.push(newAcceptRecord);
+					// Iterate over reverse transitions
+					for (var j = 0; j < reverseTransitionsCount; j++) {
 
-					// Add a new missing record for a missing-input transition
+						// Save current reverse transition key
+						var currentReverseTransitionKey = reverseTransitionsKeys[j];
 
-					// Save the reverse transition to which current input item belongs
-					var reverseTransition = currentStateReverseTransitions[nextStateAsString];
+						// If we are not dealing with a previously processed reverse transition
+						if (currentReverseTransitionKey !== nextStateAsString) {
 
-					// Create missing record for reverse transition except for the accepted transition
-					var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord, reverseTransition, nextState, nextInputItem);
+							// Save reference to the current reverse transition
+							var currentReverseTransition = currentStateReverseTransitions[currentReverseTransitionKey];
 
-					// Add the new partially missing record to the tail derivatives
-					tailDerivatives.push(newPartiallyMissingRecord);
+							// Save the current reverse transition state
+							var currentReverseTransitionState = parseInt(currentReverseTransitionKey);
 
-				}
+							// Create missing record for reverse transition
+							var nextMissingRecord = createMissingRecord(tailRecord, currentReverseTransition, currentReverseTransitionState);
 
-				// Add the new missing records for all the missing transitions
-
-				// Save reverse transition keys
-				var reverseTransitionsKeys = Object.keys(currentStateReverseTransitions);
-
-				// Save reverse transitions amount
-				var reverseTransitionsCount = reverseTransitionsKeys.length;
-
-				// Iterate over reverse transitions
-				for (var j = 0; j < reverseTransitionsCount; j++) {
-
-					// Save current reverse transition key
-					var currentReverseTransitionKey = reverseTransitionsKeys[j];
-
-					// If we are not dealing with a previously processed reverse transition
-					if (currentReverseTransitionKey !== nextStateAsString) {
-
-						// Save reference to the current reverse transition
-						var currentReverseTransition = currentStateReverseTransitions[currentReverseTransitionKey];
-
-						// Save the current reverse transition state
-						var currentReverseTransitionState = parseInt(currentReverseTransitionKey);
-
-						// Create missing record for reverse transition
-						var nextMissingRecord = createMissingRecord(tailRecord, currentReverseTransition, currentReverseTransitionState);
-
-						// Add the next missing record to the tail derivatives
-						tailDerivatives.push(nextMissingRecord);
+							// Add the next missing record to the tail derivatives
+							tailDerivatives.push(nextMissingRecord);
+						}
 					}
 				}
 			}
-
-			// TODO: Detect loops in the records chains and drop records in case of loops detected
 
 			return tailDerivatives;
 		}

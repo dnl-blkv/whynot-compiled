@@ -118,7 +118,7 @@ define(
 
 					var addPosition = currentRecord.getAcceptedCount() + currentRecord.getMissingCount() - 1;
 
-					reverseResults.unshift([currentRecord.getMissing(), currentRecord.getCharacters(), addPosition]);
+					reverseResults.unshift([currentRecord.isMissing(), currentRecord.getCharacters(), addPosition]);
 
 					currentRecord = currentRecord.getPreviousRecord();
 				}

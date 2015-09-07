@@ -50,7 +50,7 @@ define(
 			return this.characters;
 		}
 
-		Record.prototype.getMissing = function () {
+		Record.prototype.isMissing = function () {
 			return this.missing;
 		}
 
@@ -65,6 +65,37 @@ define(
 		Record.prototype.getAcceptedCount = function () {
 			return this.acceptedCount;
 		};
+
+		Record.prototype.hasLoops = function () {
+
+			// TODO: Probably use for creation of a pre-cached loop-map
+			// TODO: Further use the loop-map instead of this slow loop detection
+
+			var hasLoops = false;
+
+			var record = this;
+
+			var state = record.getTargetState();
+
+			var previousRecord = record.getPreviousRecord();
+
+			var previousState = (previousRecord === null) ? -1 : previousRecord.getTargetState();
+
+			while ((record.getPreviousRecord() !== null) && (record.isMissing() === true)) {
+
+				if (state === previousState) {
+					console.log("Loop state: " + state);
+
+					hasLoops = true;
+				}
+
+				record = record.getPreviousRecord();
+
+				previousState = previousRecord === null ? 0 : previousRecord.getTargetState();
+			}
+
+			return hasLoops;
+		}
 
 		return Record;
 	}
