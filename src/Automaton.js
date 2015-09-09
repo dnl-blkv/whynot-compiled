@@ -56,21 +56,11 @@ define(
 			// Define the input buffer
 			this.inputBuffer = [];
 
-			// Define the final records
-			this.finalRecords = [];
-
 			// Define the indicator of input completeness
 			this.inputOver = false;
-		}
 
-		/**
-		 * Checks whether or not the input is over.
-		 *
-		 * @param automaton
-		 * @returns {boolean|*}
-		 */
-		function isInputOver (automaton) {
-			return automaton.inputOver;
+			// Define the final records
+			this.finalRecords = [];
 		}
 
 		/**
@@ -91,7 +81,7 @@ define(
 				if (inputItem !== null) {
 
 					// Save input item to the buffer
-					writeToInputBuffer(automaton, inputItem);
+					automaton.inputBuffer.push(inputItem);
 				} else {
 
 					// State that input is over
@@ -101,13 +91,13 @@ define(
 		}
 
 		/**
-		 * Add an input item to the input buffer.
+		 * Checks whether or not the input is over.
 		 *
 		 * @param automaton
-		 * @param inputItem
+		 * @returns {boolean|*}
 		 */
-		function writeToInputBuffer (automaton, inputItem) {
-			automaton.inputBuffer.push(inputItem);
+		function isInputOver (automaton) {
+			return automaton.inputOver;
 		}
 
 		/**
@@ -118,7 +108,6 @@ define(
 		 * @returns {*}
 		 */
 		function getInputItemById (automaton, id) {
-			// Return the input item
 			return automaton.inputBuffer[id];
 		}
 
@@ -139,15 +128,6 @@ define(
 		 */
 		function resetInputBuffer (automaton) {
 			automaton.inputBuffer = [];
-		}
-
-		/**
-		 * Returns the current input buffer length.
-		 *
-		 * @param automaton
-		 */
-		function getInputBufferLength (automaton) {
-			return automaton.inputBuffer.length;
 		}
 
 		/**
@@ -283,7 +263,7 @@ define(
 		function getNextInputItemForRecord (automaton, input, record) {
 
 			// Get the current input buffer length of the automaton
-			var inputBufferLength = getInputBufferLength(automaton);
+			var inputBufferLength = getInputBufferSize(automaton);
 
 			// Get the amount of characters accepted till the current record
 			var acceptedRecordsCount = record.getAcceptedCount();
@@ -504,6 +484,7 @@ define(
 				newTailRecords = newTailRecords.concat(currentTailDerivatives);
 			}
 
+			// Return the newly created tail records
 			return newTailRecords;
 		}
 

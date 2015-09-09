@@ -37,7 +37,7 @@ define(
 
 			var transitions = [
 				{"a": 1, "c": 2, "e": 3},
-				{"b": 0},
+				{"b": 0, "e": 3},
 				{"d": 0},
 				{"f": 0}
 			];
@@ -48,7 +48,7 @@ define(
 
 			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
 
-			var inputString = "abcad";
+			var inputString = "bea";
 
 			console.log("Input: " + inputString);
 			console.log("");
