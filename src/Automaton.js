@@ -61,6 +61,12 @@ define(
 
 			// Define the final records
 			this.finalRecords = [];
+
+			// Create an initial record
+			var initialRecord = createInitialRecord(this);
+
+			// Define the tail records
+			this.tailRecords = [initialRecord];
 		}
 
 		/**
@@ -140,6 +146,69 @@ define(
 		}
 
 		/**
+		 * Get the list of final records.
+		 *
+		 * @param automaton
+		 */
+		function getFinalRecords (automaton) {
+			return automaton.finalRecords;
+		}
+
+		/**
+		 * Creates an initial record.
+		 *
+		 * @param automaton
+		 * @returns {Record}
+		 */
+		function createInitialRecord (automaton) {
+			return new Record(null, automaton.initialState, [''], false);
+		}
+
+		/**
+		 * Reset tail records to re-run the automaton.
+		 *
+		 * @param automaton
+		 */
+		function resetTailRecords (automaton) {
+
+			// Create an initial record
+			var initialRecord = createInitialRecord(automaton);
+
+			// Update tail records
+			updateTailRecords(automaton, [initialRecord]);
+		}
+
+		/**
+		 * Replace old tail records with new tail records.
+		 *
+		 * @param automaton
+		 * @param newTailRecords
+		 */
+		function updateTailRecords (automaton, newTailRecords) {
+			automaton.tailRecords = newTailRecords;
+		}
+
+		/**
+		 * Get the tail records array.
+		 *
+		 * @param automaton
+		 * @returns {Array|*}
+		 */
+		function getTailRecords (automaton) {
+			return automaton.tailRecords;
+		}
+
+		/**
+		 * Get the current amount of tail records.
+		 *
+		 * @param automaton
+		 * @returns {Number}
+		 */
+		function getTailRecordsCount (automaton) {
+			return automaton.tailRecords.length;
+		}
+
+		/**
 		 * Reset the automaton.
 		 *
 		 * @param automaton
@@ -151,6 +220,9 @@ define(
 
 			// Reset the final records
 			resetFinalRecords(automaton);
+
+			// Reset the tail records
+			resetTailRecords(automaton);
 		}
 
 		/**
@@ -456,20 +528,22 @@ define(
 		}
 
 		/**
-		 * Execute all tail records in a single generation.
+		 * Executes all the current tails and returns the new tails.
 		 *
 		 * @param automaton
-		 * @param tailRecords
 		 * @param input
 		 * @returns {Array}
 		 */
-		function executeTails (automaton, tailRecords, input) {
+		function executeTails (automaton, input) {
 
 			// Create new tail records array
 			var newTailRecords = [];
 
+			// Create reference to tail records
+			var tailRecords = getTailRecords(automaton);
+
 			// Save the amount of tail records
-			var tailRecordsCount = tailRecords.length;
+			var tailRecordsCount = getTailRecordsCount(automaton);
 
 			// Loop over the tail records
 			for (var currentTailRecordId = 0; currentTailRecordId < tailRecordsCount; currentTailRecordId ++) {
@@ -480,11 +554,11 @@ define(
 				// Execute the current tail record and get its derivatives
 				var currentTailDerivatives = executeTail(automaton, currentTailRecord, input);
 
-				// Concat tail derivatives to the new tail records
+				// Add current tail derivatives to the new tail records array
 				newTailRecords = newTailRecords.concat(currentTailDerivatives);
 			}
 
-			// Return the newly created tail records
+			// Return result of current tails array execution
 			return newTailRecords;
 		}
 
@@ -499,21 +573,18 @@ define(
 			// Reset the automaton to initial state
 			reset(this);
 
-			// Create an initial record
-			var initialRecord = new Record(null, this.initialState, [''], false);
-
-			// Create array for tailing records
-			var tailRecords = [initialRecord];
-
 			// Loop over generations of tail records
-			while (tailRecords.length > 0) {
+			while (getTailRecordsCount(this) > 0) {
 
-				// Update the tailRecords
-				tailRecords = executeTails(this, tailRecords, input);
+				// Execute the tailRecords
+				var newTailRecords = executeTails(this, input);
+
+				// Update the tail records array
+				updateTailRecords(this, newTailRecords);
 			}
 
 			// Return the final records
-			return this.finalRecords;
+			return getFinalRecords(this);
 		};
 
 		return Automaton;
