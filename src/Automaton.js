@@ -3,7 +3,7 @@
  */
 define(
 	[
-		'Record'
+		'./Record'
 	],
 	function(
 		Record
