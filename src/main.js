@@ -33,22 +33,37 @@ define(
 			//
 			//var finalStates = [5, 6];
 
+			//(abc)|(adec)
+			
 			var initialState = 0;
 
 			var transitions = [
-				{"a": 1, "c": 2, "e": 3},
-				{"b": 0, "e": 3},
-				{"d": 0},
-				{"f": 0}
+				{"a": 1},
+				{"b": 2, "d": 3},
+				{"c": 0},
+				{"e": 2}
 			];
 
-			var finalStates = [2];
+			var finalStates = [0];
+
+			//(abc)|(adec)*
+			//var initialState = 0;
+			//
+			//var transitions = [
+			//	{"a": 1},
+			//	{"b": 2, "d": 3},
+			//	{"c": 4},
+			//	{"e": 2},
+			//	{}
+			//];
+			//
+			//var finalStates = [4];
 
 			var reverseTransitions = createReverseTransitions(transitions);
 
 			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
 
-			var inputString = "bea";
+			var inputString = "ac";
 
 			console.log("Input: " + inputString);
 			console.log("");
