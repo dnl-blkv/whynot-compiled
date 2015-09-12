@@ -8,15 +8,18 @@
  */
 define(
 	[
-		'./Automaton'
+		'./BiverseDFA',
+		'./Traverser'
 	],
 	function(
-		Automaton
+		BiverseDFA,
+		Traverser
 	) {
 		'use strict';
 
 		return {
-			Automaton: Automaton
+			BiverseDFA: BiverseDFA,
+			Traverser: Traverser
 		};
 	}
 );

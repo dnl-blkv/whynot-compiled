@@ -3,55 +3,25 @@
  */
 define(
 	[
+		'./BiverseDFA',
 		'./Record'
 	],
 	function(
+		BiverseDFA,
 		Record
 	) {
 		'use strict';
 
 		/**
-		 * Describes an automaton representing a regular rule.
+		 * Describes a traverser to execute a DFA suggesting input expansion if required.
 		 *
-		 * @param initialState
-		 * @param transitions
-		 * @param reverseTransitions
-		 * @param finalStates
+		 * @param biverseDFA
 		 * @constructor
 		 */
-		function Automaton (initialState, transitions, reverseTransitions, finalStates) {
+		function Traverser (biverseDFA) {
 
-			// Define initial state variable
-			this.initialState = initialState;
-
-			if (this.initialState === undefined) {
-				console.log("initialState was not set for an Automaton!");
-				this.initialState = 0;
-			}
-
-			// Define transitions table
-			this.transitions = transitions;
-
-			if (this.transitions === undefined) {
-				console.log("transitions were not set for an Automaton!");
-				this.transitions = [];
-			}
-
-			// Define reverse transitions table
-			this.reverseTransitions = reverseTransitions;
-
-			if (this.reverseTransitions === undefined) {
-				console.log("reverse transitions were not set for an Automaton!");
-				this.reverseTransitions = [];
-			}
-
-			// Define final states array
-			this.finalStates = finalStates;
-
-			if (this.finalStates === undefined) {
-				console.log("finalStates were not set for an Automaton!");
-				this.finalStates = [];
-			}
+			// Define an automaton to execute
+			this.biverseDFA = biverseDFA;
 
 			// Define the input buffer
 			this.inputBuffer = [];
@@ -72,13 +42,13 @@ define(
 		/**
 		 * Get and buffer the next input item
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param input
 		 */
-		function saveNextInputItem (automaton, input) {
+		function saveNextInputItem (traverser, input) {
 
 			// If input is not yet over
-			if (!isInputOver(automaton)) {
+			if (!isInputOver(traverser)) {
 
 				// Get the first input item
 				var inputItem = input();
@@ -87,11 +57,11 @@ define(
 				if (inputItem !== null) {
 
 					// Save input item to the buffer
-					automaton.inputBuffer.push(inputItem);
+					traverser.inputBuffer.push(inputItem);
 				} else {
 
 					// State that input is over
-					automaton.inputOver = true;
+					traverser.inputOver = true;
 				}
 			}
 		}
@@ -99,145 +69,145 @@ define(
 		/**
 		 * Checks whether or not the input is over.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @returns {boolean|*}
 		 */
-		function isInputOver (automaton) {
-			return automaton.inputOver;
+		function isInputOver (traverser) {
+			return traverser.inputOver;
 		}
 
 		/**
 		 * Get an input item by its order in the buffer.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param id
 		 * @returns {*}
 		 */
-		function getInputItemById (automaton, id) {
-			return automaton.inputBuffer[id];
+		function getInputItemById (traverser, id) {
+			return traverser.inputBuffer[id];
 		}
 
 		/**
 		 * Returns current size of the input buffer.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @returns {Number}
 		 */
-		function getInputBufferSize (automaton) {
-			return automaton.inputBuffer.length;
+		function getInputBufferSize (traverser) {
+			return traverser.inputBuffer.length;
 		}
 
 		/**
 		 * Reset the input buffer.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 */
-		function resetInputBuffer (automaton) {
-			automaton.inputBuffer = [];
+		function resetInputBuffer (traverser) {
+			traverser.inputBuffer = [];
 		}
 
 		/**
 		 * Reset the final records
 		 *
-		 * @param automaton
+		 * @param traverser
 		 */
-		function resetFinalRecords (automaton) {
-			automaton.finalRecords = [];
+		function resetFinalRecords (traverser) {
+			traverser.finalRecords = [];
 		}
 
 		/**
 		 * Get the list of final records.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 */
-		function getFinalRecords (automaton) {
-			return automaton.finalRecords;
+		function getFinalRecords (traverser) {
+			return traverser.finalRecords;
 		}
 
 		/**
-		 * Reset tail records to re-run the automaton.
+		 * Reset tail records to re-run the traverser.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 */
-		function resetTailRecords (automaton) {
+		function resetTailRecords (traverser) {
 
 			// Create an initial record
-			var initialRecord = createInitialRecord(automaton);
+			var initialRecord = createInitialRecord(traverser);
 
 			// Update tail records
-			updateTailRecords(automaton, [initialRecord]);
+			updateTailRecords(traverser, [initialRecord]);
 		}
 
 		/**
 		 * Replace old tail records with new tail records.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param newTailRecords
 		 */
-		function updateTailRecords (automaton, newTailRecords) {
-			automaton.tailRecords = newTailRecords;
+		function updateTailRecords (traverser, newTailRecords) {
+			traverser.tailRecords = newTailRecords;
 		}
 
 		/**
 		 * Get the tail records array.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @returns {Array|*}
 		 */
-		function getTailRecords (automaton) {
-			return automaton.tailRecords;
+		function getTailRecords (traverser) {
+			return traverser.tailRecords;
 		}
 
 		/**
 		 * Get the current amount of tail records.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @returns {Number}
 		 */
-		function getTailRecordsCount (automaton) {
-			return automaton.tailRecords.length;
+		function getTailRecordsCount (traverser) {
+			return traverser.tailRecords.length;
 		}
 
 		/**
-		 * Reset the automaton.
+		 * Reset the traverser.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 */
-		function reset (automaton) {
+		function reset (traverser) {
 
 			// Reset the input buffer
-			resetInputBuffer(automaton);
+			resetInputBuffer(traverser);
 
 			// Reset the final records
-			resetFinalRecords(automaton);
+			resetFinalRecords(traverser);
 
 			// Reset the tail records
-			resetTailRecords(automaton);
+			resetTailRecords(traverser);
 		}
 
 		/**
 		 * Check whether a given state is final.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param state
 		 * @returns {boolean}
 		 */
-		function isStateFinal (automaton, state) {
-			return  (-1 < automaton.finalStates.indexOf(state));
+		function isStateFinal (traverser, state) {
+			return  traverser.biverseDFA.isStateFinal(state);
 		}
 
 		/**
 		 * Creates an initial record.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @returns {Record}
 		 */
-		function createInitialRecord (automaton) {
+		function createInitialRecord (traverser) {
 
 			// Return a new initial record
 			return new Record(
 				null,
-				automaton.initialState,
+				traverser.initialState,
 				[''],
 				false
 			);
@@ -312,37 +282,28 @@ define(
 		}
 
 		/**
-		 * Get transitions for a state.
-		 *
-		 * @param currentState
-		 * @returns {*}
-		 */
-		Automaton.prototype.getStateTransitions = function (currentState) {
-			return this.transitions[currentState];
-		};
-
-		/**
 		 * Get reverse transitions for a state.
 		 *
+		 * @param traverser
 		 * @param currentState
 		 * @returns {*}
 		 */
-		Automaton.prototype.getStateReverseTransitions = function (currentState) {
-			return this.reverseTransitions[currentState];
-		};
+		function getStateReverseTransitions (traverser, currentState) {
+			return traverser.biverseDFA.getStateReverseTransitions(currentState);
+		}
 
 		/**
 		 * Get a next input item taking a given record's accepted characters history.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param input
 		 * @param record
 		 * @returns {*}
 		 */
-		function getNextInputItemForRecord (automaton, input, record) {
+		function getNextInputItemForRecord (traverser, input, record) {
 
-			// Get the current input buffer length of the automaton
-			var inputBufferLength = getInputBufferSize(automaton);
+			// Get the current input buffer length of the traverser
+			var inputBufferLength = getInputBufferSize(traverser);
 
 			// Get the amount of characters accepted till the current record
 			var acceptedRecordsCount = record.getAcceptedCount();
@@ -351,60 +312,55 @@ define(
 			if (inputBufferLength <= acceptedRecordsCount) {
 
 				// Grab more input
-				saveNextInputItem(automaton, input);
+				saveNextInputItem(traverser, input);
 			}
 
 			// Get the proper input item
-			return getInputItemById(automaton, acceptedRecordsCount);
+			return getInputItemById(traverser, acceptedRecordsCount);
 		}
 
 		/**
 		 * Get the next state for a given state and input.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param currentState
 		 * @param inputItem
 		 * @returns {*}
 		 */
-		function getNextState (automaton, currentState, inputItem) {
-
-			// Get transitions info array for the current state
-			var currentStateTransitions = automaton.getStateTransitions(currentState);
-
-			// Return the next state
-			return currentStateTransitions[inputItem];
+		function getNextState (traverser, currentState, inputItem) {
+			return traverser.biverseDFA.getNextState(currentState, inputItem);
 		}
 
 		/**
 		 * Check whether or not a record is final.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param input
 		 * @param record
 		 * @returns {boolean|*}
 		 */
-		function isRecordFinal (automaton, input, record) {
+		function isRecordFinal (traverser, input, record) {
 
 			// Indicator of record finality
 			var recordFinal = false;
 
 			// Is record's target state final?
-			var targetStateFinal = isStateFinal(automaton, record.targetState);
+			var targetStateFinal = isStateFinal(traverser, record.targetState);
 
 			// Save record's accepted count
 			var recordAcceptedCount = record.getAcceptedCount();
 
 			// Save the input size
-			var inputBufferSize = getInputBufferSize(automaton);
+			var inputBufferSize = getInputBufferSize(traverser);
 
 			// If the record's target state is final and all the input has been accepted by it
 			if (targetStateFinal && (recordAcceptedCount === inputBufferSize)) {
 
 				// Try getting more input
-				saveNextInputItem(automaton, input);
+				saveNextInputItem(traverser, input);
 
 				// If the preceding attempt confirms the input being over
-				if (isInputOver(automaton)) {
+				if (isInputOver(traverser)) {
 
 					// Record is final
 					recordFinal = true;
@@ -418,49 +374,49 @@ define(
 		/**
 		 * Save record as final.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param record
 		 */
-		function saveFinalRecord (automaton, record) {
-			automaton.finalRecords.push(record);
+		function saveFinalRecord (traverser, record) {
+			traverser.finalRecords.push(record);
 		}
 
 		/**
 		 * Executes a single tail, returns its derivatives.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param input
 		 * @param tailRecord
 		 */
-		function processTailRecord (automaton, input, tailRecord) {
+		function processTailRecord (traverser, input, tailRecord) {
 
 			// Create new tail records array
 			var tailDerivatives = [];
 
 			// Check for loops
-			var loopFree = !tailRecord.hasLoops(automaton.initialState);
+			var loopFree = !tailRecord.hasLoops(traverser.initialState);
 
 			// If no loops detected in the record
 			if (loopFree) {
 
 				// If the record appears final
-				if (isRecordFinal(automaton, input, tailRecord)) {
+				if (isRecordFinal(traverser, input, tailRecord)) {
 
 					// Save it as final
-					saveFinalRecord(automaton, tailRecord);
+					saveFinalRecord(traverser, tailRecord);
 				} else {
 
 					// Save the current state number
 					var currentState = tailRecord.getTargetState();
 
 					// Get the next input item for the current record
-					var nextInputItem = getNextInputItemForRecord(automaton, input, tailRecord);
+					var nextInputItem = getNextInputItemForRecord(traverser, input, tailRecord);
 
 					// Get the next state for the record
-					var nextState = getNextState(automaton, currentState, nextInputItem);
+					var nextState = getNextState(traverser, currentState, nextInputItem);
 
 					// Save reverse transitions for current state
-					var currentStateReverseTransitions = automaton.getStateReverseTransitions(currentState);
+					var currentStateReverseTransitions = getStateReverseTransitions(traverser, currentState);
 
 					// Save the next state as a string index
 					var nextStateAsString = nextState + '';
@@ -532,20 +488,20 @@ define(
 		/**
 		 * Executes all the current tails and returns the new tails.
 		 *
-		 * @param automaton
+		 * @param traverser
 		 * @param input
 		 * @returns {Array}
 		 */
-		function processLatestTailRecords (automaton, input) {
+		function processLatestTailRecords (traverser, input) {
 
 			// Create new tail records array
 			var newTailRecords = [];
 
 			// Create reference to tail records
-			var tailRecords = getTailRecords(automaton);
+			var tailRecords = getTailRecords(traverser);
 
 			// Save the amount of tail records
-			var tailRecordsCount = getTailRecordsCount(automaton);
+			var tailRecordsCount = getTailRecordsCount(traverser);
 
 			// Loop over the tail records
 			for (var currentTailRecordId = 0; currentTailRecordId < tailRecordsCount; currentTailRecordId ++) {
@@ -554,7 +510,7 @@ define(
 				var currentTailRecord = tailRecords[currentTailRecordId];
 
 				// Execute the current tail record and get its derivatives
-				var currentTailDerivatives = processTailRecord(automaton, input, currentTailRecord);
+				var currentTailDerivatives = processTailRecord(traverser, input, currentTailRecord);
 
 				// Add current tail derivatives to the new tail records array
 				newTailRecords = newTailRecords.concat(currentTailDerivatives);
@@ -565,14 +521,14 @@ define(
 		}
 
 		/**
-		 * Execute the automaton to get all the possible additions without loop repetitions.
+		 * Execute the traverser to get all the possible additions without loop repetitions.
 		 *
 		 * @param input
 		 * @returns {Array}
 		 */
-		Automaton.prototype.execute = function (input) {
+		Traverser.prototype.execute = function (input) {
 
-			// Reset the automaton to initial state
+			// Reset the traverser to initial state
 			reset(this);
 
 			// Loop over generations of tail records
@@ -589,6 +545,6 @@ define(
 			return getFinalRecords(this);
 		};
 
-		return Automaton;
+		return Traverser;
 	}
 );

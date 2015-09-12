@@ -12,9 +12,10 @@ define(
 	) {
 		'use strict';
 
-		var Automaton = whynotPremadePlayer.Automaton;
+		var BiverseDFA = whynotPremadePlayer.BiverseDFA;
+		var Traverser = whynotPremadePlayer.Traverser;
 
-		console.log(regexParser.parse('(a|(b|c))'));
+		//console.log(regexParser.parse('(a(ab|ca))'));
 
 		function createInput(array) {
 			var i = 0;
@@ -25,8 +26,6 @@ define(
 
 		function testAutomaton () {
 
-			//var initialState = 0;
-			//
 			//var transitions = [
 			//	{"a": 1, "b": 2},
 			//	{"d": 3},
@@ -41,8 +40,6 @@ define(
 
 			//(abc)|(adec)
 
-			var initialState = 0;
-
 			var transitions = [
 				{"a": 1},
 				{"b": 2, "d": 3},
@@ -53,7 +50,6 @@ define(
 			var finalStates = [0];
 
 			//(abc)|(adec)*
-			//var initialState = 0;
 			//
 			//var transitions = [
 			//	{"a": 1},
@@ -67,7 +63,9 @@ define(
 
 			var reverseTransitions = createReverseTransitions(transitions);
 
-			var automaton = new Automaton(initialState, transitions, reverseTransitions, finalStates);
+			var biverseDFA = new BiverseDFA(transitions, reverseTransitions, finalStates);
+
+			var traverser = new Traverser(biverseDFA);
 
 			var inputString = "ac";
 
@@ -76,7 +74,7 @@ define(
 
 			var t1 = timeNow();
 
-			var results = automaton.execute(createInput(inputString));
+			var results = traverser.execute(createInput(inputString));
 
 			var t2 = timeNow();
 			console.log("Milliseconds taken: " + (t2 - t1));
@@ -177,7 +175,7 @@ define(
 		testAutomaton();
 
 		return {
-			Automaton: Automaton
+			Automaton: Traverser
 		};
 	}
 );
