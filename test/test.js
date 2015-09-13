@@ -15,7 +15,7 @@ define(
 		var BiverseDFA = whynotPremadePlayer.BiverseDFA;
 		var Traverser = whynotPremadePlayer.Traverser;
 
-		//console.log(regexParser.parse('(a(ab|ca))'));
+		console.log(regexParser.parse('(a((ab)|(ca)))'));
 
 		function createInput(array) {
 			var i = 0;

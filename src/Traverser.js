@@ -207,7 +207,7 @@ define(
 			// Return a new initial record
 			return new Record(
 				null,
-				traverser.initialState,
+				traverser.initialStates,
 				[''],
 				false
 			);
@@ -394,7 +394,7 @@ define(
 			var tailDerivatives = [];
 
 			// Check for loops
-			var loopFree = !tailRecord.hasLoops(traverser.initialState);
+			var loopFree = !tailRecord.hasLoops(traverser.initialStates);
 
 			// If no loops detected in the record
 			if (loopFree) {

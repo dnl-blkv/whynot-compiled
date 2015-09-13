@@ -42,7 +42,7 @@ define(
 			}
 
 			// Set the initial state, it's always 0 for these simplified automata
-			this.initialState = 0;
+			this.initialStates = 0;
 		}
 
 		/**
