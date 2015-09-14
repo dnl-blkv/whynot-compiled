@@ -3,19 +3,21 @@
  */
 define(
 	[
-		'whynotPremadePlayer',
-		'regexParser'
+		'./NFA',
+		'regexParser',
+		'whynotPremadePlayer'
 	],
 	function(
-		whynotPremadePlayer,
-		regexParser
+		NFA,
+		regexParser,
+		whynotPremadePlayer
 	) {
 		'use strict';
 
 		var BiverseDFA = whynotPremadePlayer.BiverseDFA;
 		var Traverser = whynotPremadePlayer.Traverser;
 
-		console.log(regexParser.parse('(a((ab)|(ca)))'));
+		NFA.fromRegExp('(a((ab)|(ca)))');
 
 		function createInput(array) {
 			var i = 0;
