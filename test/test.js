@@ -3,12 +3,12 @@
  */
 define(
 	[
-		'./NFA',
+		'./Automaton',
 		'regexParser',
 		'whynotPremadePlayer'
 	],
 	function(
-		NFA,
+		Automaton,
 		regexParser,
 		whynotPremadePlayer
 	) {
@@ -31,7 +31,7 @@ define(
 
 			var regexp = '(a|(bc))d(e|f)';
 
-			var simpleMinimalDFA = NFA.regExpToSimpleMinimalDFA(regexp);
+			var simpleMinimalDFA = Automaton.regExpToSimpleMinimalDFA(regexp);
 
 			var tAfterConversion = timeNow();
 

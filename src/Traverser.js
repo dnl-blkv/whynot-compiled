@@ -33,7 +33,7 @@ define(
 			this.finalRecords = [];
 
 			// Create an initial record
-			var initialRecord = createInitialRecord(this);
+			var initialRecord = createInitialRecord();
 
 			// Define the tail records
 			this.tailRecords = [initialRecord];
@@ -103,7 +103,11 @@ define(
 		 * @param traverser
 		 */
 		function resetInputBuffer (traverser) {
+			// Reset the input buffer
 			traverser.inputBuffer = [];
+
+			// Reset the input over indicator
+			traverser.inputOver = false;
 		}
 
 		/**
@@ -202,12 +206,12 @@ define(
 		 * @param traverser
 		 * @returns {Record}
 		 */
-		function createInitialRecord (traverser) {
+		function createInitialRecord () {
 
 			// Return a new initial record
 			return new Record(
 				null,
-				traverser.initialStates,
+				BiverseDFA.INITIAL_STATE,
 				[''],
 				false
 			);
@@ -394,7 +398,7 @@ define(
 			var tailDerivatives = [];
 
 			// Check for loops
-			var loopFree = !tailRecord.hasLoops(traverser.initialStates);
+			var loopFree = !tailRecord.hasLoops(0);
 
 			// If no loops detected in the record
 			if (loopFree) {
@@ -441,7 +445,8 @@ define(
 						if (reverseTransition.length > 1) {
 
 							// Create accepted record for reverse transition except for the accepted transition
-							var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord, reverseTransition, nextInputItem, nextState);
+							var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord,
+								reverseTransition, nextInputItem, nextState);
 
 							// Add the new partially accepted record to the tail derivatives
 							tailDerivatives.push(newPartiallyMissingRecord);

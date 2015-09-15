@@ -45,6 +45,13 @@ define(
 		}
 
 		/**
+		 * Constant describing a biverse DFA initial state.
+		 *
+		 * @type {number}
+		 */
+		BiverseDFA.INITIAL_STATE = 0;
+
+		/**
 		 * Check whether a given state is final.
 		 *
 		 * @param state

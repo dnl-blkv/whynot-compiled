@@ -14,20 +14,18 @@ define(
 	) {
 		'use strict';
 
-		// TODO: A tiny array extension; move this.
-
 		/**
 		 * Describes a Non-deterministic Finite Automaton.
 		 *
 		 * @constructor
 		 */
-		function NFA () {
+		function Automaton () {
 
 			// Save the initial state
 			this.initialStates = [];
 
 			// Save the states array
-			this.states = [];
+			this.statesCount = [];
 
 			// Save the array for transitions
 			this.transitions = [];
@@ -36,45 +34,39 @@ define(
 			this.finalStates = [];
 		}
 
-		NFA.prototype.setInitialStates = function (initialState) {
+		Automaton.prototype.setInitialStates = function (initialState) {
 			this.initialStates = initialState;
 		};
 
-		NFA.prototype.getInitialStates = function () {
-			return this.initialStates;
+		Automaton.prototype.getInitialStates = function () {
+			return this.initialStates.slice();
 		};
 
-		NFA.prototype.getStatesCount = function () {
-			return this.states.length;
+		Automaton.prototype.getStatesCount = function () {
+			return this.statesCount;
 		};
 
-		NFA.prototype.getTransitionsCount = function () {
+		Automaton.prototype.getTransitionsCount = function () {
 			return this.transitions.length;
 		};
 
-		NFA.prototype.setStates = function (statesCount) {
-			for(var i = 0; i < statesCount; ++ i) {
-				this.states.push(i);
-			}
+		Automaton.prototype.setStatesCount = function (statesCount) {
+			this.statesCount = statesCount;
 		};
 
-		NFA.prototype.getStates = function () {
-			return this.states;
-		};
-
-		NFA.prototype.addTransition = function (stateFrom, stateTo, character) {
+		Automaton.prototype.addTransition = function (stateFrom, stateTo, character) {
 
 			var newTransition = new Transition(stateFrom, stateTo, character);
 
 			this.transitions.push(newTransition);
 		};
 
-		NFA.prototype.setFinalStates = function (finalState) {
+		Automaton.prototype.setFinalStates = function (finalState) {
 			this.finalStates = finalState;
 		};
 
-		NFA.prototype.getFinalStates = function () {
-			return this.finalStates;
+		Automaton.prototype.getFinalStates = function () {
+			return this.finalStates.slice();
 		};
 
 		/**
@@ -82,21 +74,18 @@ define(
 		 *
 		 * @param leftNFA
 		 * @param rightNFA
-		 * @returns {NFA}
+		 * @returns {Automaton}
 		 */
-		NFA.concat = function (leftNFA, rightNFA) {
+		Automaton.concat = function (leftNFA, rightNFA) {
 
 			// Create an empty NFA to save the result
-			var result = new NFA();
+			var result = new Automaton();
 
 			// Set the amount of states for the resulting NFA
-			result.setStates(leftNFA.getStatesCount() + rightNFA.getStatesCount());
-
-			// Copy left NFA initial states to define the new NFA initial states array
-			var newInitialStates = leftNFA.getInitialStates().slice();
+			result.setStatesCount(leftNFA.getStatesCount() + rightNFA.getStatesCount());
 
 			// Set the new initial states for the new NFA
-			result.setInitialStates(newInitialStates);
+			result.setInitialStates(leftNFA.getInitialStates());
 
 			// Declare counter and temporal variable for storing transitions
 			var currentTransitionID, newTransition;
@@ -136,7 +125,7 @@ define(
 			}
 
 			// Copy the right NFA final states to define a new NFA final states array
-			var newFinalStates = rightNFA.getFinalStates().slice();
+			var newFinalStates = rightNFA.getFinalStates();
 
 			// Loop over the new final states
 			for (var currentFinalStateID = 0; currentFinalStateID < newFinalStates.length; ++ currentFinalStateID) {
@@ -156,12 +145,12 @@ define(
 		 * Parallelize given NFA.
 		 *
 		 * @param choices
-		 * @returns {NFA}
+		 * @returns {Automaton}
 		 */
-		NFA.choice = function (choices) {
+		Automaton.choice = function (choices) {
 
 			// Create a NFA for result
-			var result = new NFA();
+			var result = new Automaton();
 
 			// Save the total amount of states in the new NFA
 			var statesCount = 2;
@@ -174,7 +163,7 @@ define(
 			}
 
 			// Set the required amount of states
-			result.setStates(statesCount);
+			result.setStatesCount(statesCount);
 
 			// Set the single initial state for the resulting NFA
 			result.setInitialStates([0]);
@@ -226,7 +215,7 @@ define(
 			return result;
 		};
 
-		NFA.fromRegExp = function (regularExpression) {
+		Automaton.fromRegExp = function (regularExpression) {
 
 			// Create an AST for a given regular expression
 			var regularExpressionAST = regexParser.parse(regularExpression);
@@ -235,33 +224,33 @@ define(
 			return astToNFA(regularExpressionAST);
 		};
 
-		NFA.toDFA = function(nfa) {
+		Automaton.toDFA = function(nfa) {
 
 			// Return determinized NFA
 			return determinize(nfa);
 		}
 		
-		NFA.regExpToDFA = function (regularExpression) {
+		Automaton.regExpToDFA = function (regularExpression) {
 
 			// Create an NFA from a given regular expression
-			var nfa = NFA.fromRegExp(regularExpression);
+			var nfa = Automaton.fromRegExp(regularExpression);
 
 			// Return determinized NFA
-			return NFA.toDFA(nfa);
+			return Automaton.toDFA(nfa);
 		};
 
-		NFA.minimize = function (nfa) {
+		Automaton.minimize = function (nfa) {
 			return determinize(reverse(determinize(reverse(determinize(nfa)))));
 		};
 
-		NFA.regExpToMinimalDFA = function (regularExpression) {
-			var dfa = NFA.regExpToDFA(regularExpression);
+		Automaton.regExpToMinimalDFA = function (regularExpression) {
+			var dfa = Automaton.regExpToDFA(regularExpression);
 
-			return NFA.minimize(dfa);
+			return Automaton.minimize(dfa);
 		};
 
-		NFA.regExpToSimpleMinimalDFA = function (regularExpression) {
-			var minimalDFA = NFA.regExpToMinimalDFA(regularExpression);
+		Automaton.regExpToSimpleMinimalDFA = function (regularExpression) {
+			var minimalDFA = Automaton.regExpToMinimalDFA(regularExpression);
 
 			return getSimpleNotionOfAMinimalDFA(minimalDFA);
 		};
@@ -270,17 +259,19 @@ define(
 		 * Convert a given Abstract Syntax Tree made by the embedded regex parser to a NFA.
 		 *
 		 * @param ast
-		 * @returns {NFA}
+		 * @returns {Automaton}
 		 */
 		function astToNFA (ast) {
 
-			var currentNodeID, currentNodeNFA, result = new NFA();
+			var result = new Automaton();
+
+			var currentNodeID, currentNodeNFA;
 
 			switch (ast[0]) {
 				case 'test':
 
 					// Generate a simple test NFA
-					result.setStates(2);
+					result.setStatesCount(2);
 					result.setInitialStates([0]);
 					result.setFinalStates([1]);
 					result.addTransition(0, 1, ast[1]);
@@ -290,12 +281,12 @@ define(
 				case 'seq':
 
 					// Concat first two elements
-					result = NFA.concat(astToNFA(ast[1]), astToNFA(ast[2]));
+					result = Automaton.concat(astToNFA(ast[1]), astToNFA(ast[2]));
 
 					for (currentNodeID = 3; currentNodeID < ast.length; ++ currentNodeID) {
 						currentNodeNFA = astToNFA(ast[currentNodeID]);
 
-						result = NFA.concat(result, currentNodeNFA);
+						result = Automaton.concat(result, currentNodeNFA);
 					}
 
 					break;
@@ -310,7 +301,7 @@ define(
 						choices.push(currentNodeNFA);
 					}
 
-					result = NFA.choice(choices);
+					result = Automaton.choice(choices);
 
 					break;
 
@@ -400,86 +391,126 @@ define(
 		}
 
 		/**
+		 * Checks if a given combo state is final.
+		 *
+		 * @param originalNFA
+		 * @param comboState
+		 * @returns {boolean}
+		 */
+		function isComboStateFinal (originalNFA, comboState) {
+
+			// Save the indicator of the combo state being final
+			var comboStateFinal = false;
+
+			// Save a reference to old final states
+			var oldFinalStates = originalNFA.getFinalStates();
+
+			// Add the state to final states, if required
+			for (var currentOldFinalStateID = 0; currentOldFinalStateID < oldFinalStates.length; ++ currentOldFinalStateID) {
+
+				var currentOldFinalState = oldFinalStates[currentOldFinalStateID];
+
+				if (-1 < comboState.indexOf(currentOldFinalState)) {
+
+					// Set the combo state final indicator to true
+					comboStateFinal = true;
+
+					// Break
+					break;
+				}
+			}
+
+			// Return the combo state final indicator
+			return comboStateFinal;
+		}
+
+		/**
+		 * Get all the transitions of a given combo state.
+		 *
+		 * @param originalNFA
+		 * @param comboState
+		 * @returns {{}}
+		 */
+		function getComboStateTransitions (originalNFA, comboState) {
+
+			// Save the current combo state transitions array
+			var currentComboStateTransitions = {};
+
+			// Save old nfa transitions count for reference
+			var oldTransitionsCount = originalNFA.getTransitionsCount();
+
+			// Loop over the NFA transitions
+			for (var currentTransitionID = 0; currentTransitionID < oldTransitionsCount; ++ currentTransitionID) {
+
+				// Save current transition for reference
+				var currentTransition = originalNFA.transitions[currentTransitionID];
+
+				var currentTransitionIsFromCurrentComboState =
+					(-1 < comboState.indexOf(currentTransition.stateFrom));
+
+				var currentTransitionIsNonEpsilon = (currentTransition.character != '');
+
+				// If a transition for one of the current combo states found
+				if (currentTransitionIsFromCurrentComboState && currentTransitionIsNonEpsilon) {
+
+					// If there is no transition for this character from current combo state yet
+					if (currentComboStateTransitions[currentTransition.character] === undefined) {
+
+						// Create an empty array for the character and this combo state
+						currentComboStateTransitions[currentTransition.character] = [];
+					}
+
+					// Add a new transition there
+					currentComboStateTransitions[currentTransition.character].push(currentTransition.stateTo);
+				}
+			}
+
+			return currentComboStateTransitions;
+		}
+
+		/**
 		 * Determinize an NFA.
 		 *
-		 * @param nfa
-		 * @returns {NFA}
+		 * @param originalNFA
+		 * @returns {Automaton}
 		 */
-		function determinize (nfa) {
+		function determinize (originalNFA) {
 
 			// Define a new NFA (which will be a de-facto DFA) for the result
-			var result = new NFA();
-
-			// Get initial eclosure
-			var initialEclose = getInitialEclose(nfa);
-
-			// Save the new DFA combo states
-			var comboStates = [initialEclose];
-
-			// Set the initial state for the resulting DFA
-			result.setInitialStates([0]);
-
-			// Save the pointer to currently processed combo state
-			var currentComboStateID = 0;
+			var determinizedNFA = new Automaton();
 
 			// Create an array for final states
 			var newFinalStates = [];
 
-			// Save a reference to old final states
-			var oldFinalStates = nfa.getFinalStates();
+			// Get initial eclosure
+			var initialEclose = getInitialEclose(originalNFA);
+
+			// Save the new DFA combo states
+			var comboStates = [initialEclose];
+
+			// Save the pointer to currently processed combo state
+			var currentComboStateID = 0;
 
 			// As long as new combo states appear
 			while (currentComboStateID < comboStates.length) {
 
-				// Add the state to final states, if required
-				for (var currentOldFinalStateID = 0; currentOldFinalStateID < oldFinalStates.length; ++ currentOldFinalStateID) {
+				// Save current combo state for reference
+				var currentComboState = comboStates[currentComboStateID];
 
-					var currentOldFinalState = oldFinalStates[currentOldFinalStateID];
+				// If current combo state is final for the original NFA
+				if (isComboStateFinal(originalNFA, currentComboState)) {
 
-					if (-1 < comboStates[currentComboStateID].indexOf(currentOldFinalState)) {
-
-						// Save current state as final state
-						newFinalStates.push(currentComboStateID);
-
-						// Break
-						break;
-					}
+					// Save current state as final state
+					newFinalStates.push(currentComboStateID);
 				}
 
-				// Save the current combo state transitions array
-				var currentComboStateTransitions = {};
-
-				// Save old nfa transitions count for reference
-				var oldTransitionsCount = nfa.getTransitionsCount();
-
-				// Loop over the NFA transitions
-				for (var currentTransitionID = 0; currentTransitionID < oldTransitionsCount; ++ currentTransitionID) {
-
-					// Save current transition for reference
-					var currentTransition = nfa.transitions[currentTransitionID];
-
-					var currentTransitionIsFromCurrentComboState =
-						(-1 < comboStates[currentComboStateID].indexOf(currentTransition.stateFrom));
-
-					var currentTransitionIsNonEpsilon = (currentTransition.character != '');
-
-					// If a transition for one of the current combo states found
-					if (currentTransitionIsFromCurrentComboState && currentTransitionIsNonEpsilon) {
-
-						// If there is no transition for this character from current combo state yet
-						if (currentComboStateTransitions[currentTransition.character] === undefined) {
-
-							// Create an empty array for the character and this combo state
-							currentComboStateTransitions[currentTransition.character] = [];
-						}
-
-						// Add a new transition there
-						currentComboStateTransitions[currentTransition.character].push(currentTransition.stateTo);
-					}
-				}
+				// Get current combo state transitions
+				var currentComboStateTransitions = getComboStateTransitions(originalNFA, currentComboState);
 
 				// Save for reference keys of the current combo state transitions object
 				var currentComboStateTransitionsKeys = Object.keys(currentComboStateTransitions);
+
+				// Add the newly received transitions to the determinized automaton
 
 				// Loop over current combo state transitions
 				for (var cstID = 0; cstID < currentComboStateTransitionsKeys.length; ++ cstID) {
@@ -488,7 +519,9 @@ define(
 					var cstKey = currentComboStateTransitionsKeys[cstID];
 
 					// Save the eclosure of a combo state discovered
-					var currentComboStateTransitionTargetEclose = comboEclose(nfa, currentComboStateTransitions[cstKey]);
+					var currentComboStateTransitionTargetEclose = comboEclose(originalNFA, currentComboStateTransitions[cstKey]);
+
+					// Check if the target state is in the comboStates array or not
 
 					// Define current combo state ID to the last + 1 element of combo states array by default
 					var currentTargetComboStateID = comboStates.length;
@@ -514,61 +547,61 @@ define(
 					}
 
 					// Add transitions for the new combo state to the result
-					result.addTransition(currentComboStateID, currentTargetComboStateID, cstKey);
+					determinizedNFA.addTransition(currentComboStateID, currentTargetComboStateID, cstKey);
 				}
 
 				// Go to the next combo state
 				++ currentComboStateID;
 			}
 
+			// Set the initial states
+			determinizedNFA.setInitialStates([0]);
+
 			// Set the final states
-			result.setFinalStates(newFinalStates);
+			determinizedNFA.setFinalStates(newFinalStates);
 
 			// Set states for result
-			result.setStates(comboStates.length);
+			determinizedNFA.setStatesCount(comboStates.length);
 
 			// Return the determinized NFA
-			return result;
+			return determinizedNFA;
 		}
 
 		/**
-		 * Reverse a given NFA
+		 * Reverse a given automaton.
 		 *
-		 * @param nfa
-		 * @returns {NFA}
+		 * @param originalAutomaton
+		 * @returns {Automaton}
 		 */
-		function reverse (nfa) {
+		function reverse (originalAutomaton) {
 
 			// Create a new NFA for result
-			var result = new NFA();
+			var reverseAutomaton = new Automaton();
 
 			// Set old initial states as new final states
-			result.setFinalStates(nfa.getInitialStates());
+			reverseAutomaton.setFinalStates(originalAutomaton.getInitialStates());
 
 			// Set old final states as new initial states
-			result.setInitialStates(nfa.getFinalStates());
+			reverseAutomaton.setInitialStates(originalAutomaton.getFinalStates());
 
 			// Save the amount of transitions for reference
-			var transitionsCount = nfa.getTransitionsCount();
+			var transitionsCount = originalAutomaton.getTransitionsCount();
 
 			// Loop over transitions
 			for (var currentTransitonID = 0; currentTransitonID < transitionsCount; ++ currentTransitonID) {
 
 				// Save current transition for reference
-				var currentTransition = nfa.transitions[currentTransitonID];
+				var currentTransition = originalAutomaton.transitions[currentTransitonID];
 
 				// Add a reversed analog of the currently processed transition to the result
-				result.addTransition(currentTransition.stateTo, currentTransition.stateFrom, currentTransition.character);
+				reverseAutomaton.addTransition(currentTransition.stateTo, currentTransition.stateFrom, currentTransition.character);
 			}
 
 			// Return the result
-			return result;
+			return reverseAutomaton;
 		}
 
-		function getSimpleNotionOfAMinimalDFA (dfa) {
-
-			// TODO: Separate the whole DFA concept along with its methods from NFA
-			// TODO: Guarantee: initial state equals 0, epsilon-transitions are eliminated
+		function getSimpleNotionOfAMinimalDFA (minimalDFA) {
 
 			// Define a variable for the result
 			var simpleNotion = {
@@ -577,10 +610,7 @@ define(
 			};
 
 			// Save the DFA states for reference
-			var states = dfa.getStates();
-
-			// Save the DFA states count for reference
-			var statesCount = states.length;
+			var statesCount = minimalDFA.getStatesCount();
 
 			// Loop over states
 			for (var currentStateID = 0; currentStateID < statesCount; ++ currentStateID) {
@@ -589,14 +619,13 @@ define(
 				var currentStateTransitions = {};
 
 				// Find all the transitions for current state
-				for (var currentTransitionID = 0; currentTransitionID < dfa.transitions.length; ++ currentTransitionID) {
+				for (var currentTransitionID = 0; currentTransitionID < minimalDFA.transitions.length; ++ currentTransitionID) {
 
 					// Save current transition for reference
-					var currentTransition = dfa.transitions[currentTransitionID];
+					var currentTransition = minimalDFA.transitions[currentTransitionID];
 
 					// If current transition is from current state
 					if (currentTransition.stateFrom === currentStateID) {
-
 						// Save the transition in the right place
 						currentStateTransitions[currentTransition.character] = currentTransition.stateTo;
 					}
@@ -607,12 +636,12 @@ define(
 			}
 
 			// Set the final states
-			simpleNotion['finalStates'] = dfa.getFinalStates();
+			simpleNotion['finalStates'] = minimalDFA.getFinalStates();
 
 			// Return the simple minimal notion of a given DFA
 			return simpleNotion;
 		}
 
-		return NFA;
+		return Automaton;
 	}
 );
