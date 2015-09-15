@@ -3,17 +3,18 @@
  */
 define(
 	[
-		'./Automaton',
 		'regexParser',
+		'whynotPremadeCompiler',
 		'whynotPremadePlayer'
 	],
 	function(
-		Automaton,
 		regexParser,
+		whynotPremadeCompiler,
 		whynotPremadePlayer
 	) {
 		'use strict';
 
+		var Automaton = whynotPremadeCompiler.Automaton;
 		var BiverseDFA = whynotPremadePlayer.BiverseDFA;
 		var Traverser = whynotPremadePlayer.Traverser;
 

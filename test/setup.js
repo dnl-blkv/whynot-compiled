@@ -3,13 +3,17 @@ require.config({
 	"baseUrl": "test",
 
 	"paths": {
-		"regexParser": "util/regexParser"
+		"regexParser": "../src/compiler/util/regexParser"
 	},
 
 	"packages": [
 		{
 			"name": "whynotPremadePlayer",
-			"location": "../src"
+			"location": "../src/player"
+		},
+		{
+			"name": "whynotPremadeCompiler",
+			"location": "../src/compiler"
 		}
 	],
 

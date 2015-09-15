@@ -3,7 +3,7 @@
  */
 define(
 	[
-		'arrayUtils',
+		'./arrayUtils',
 		'regexParser',
 		'./Transition'
 	],
@@ -239,14 +239,14 @@ define(
 			return Automaton.toDFA(nfa);
 		};
 
-		Automaton.minimize = function (nfa) {
+		Automaton.minimNFAize = function (nfa) {
 			return determinize(reverse(determinize(reverse(determinize(nfa)))));
 		};
 
 		Automaton.regExpToMinimalDFA = function (regularExpression) {
 			var dfa = Automaton.regExpToDFA(regularExpression);
 
-			return Automaton.minimize(dfa);
+			return Automaton.minimNFAize(dfa);
 		};
 
 		Automaton.regExpToSimpleMinimalDFA = function (regularExpression) {
