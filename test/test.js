@@ -33,7 +33,13 @@ define(
 
 			var simpleMinimalDFA = NFA.regExpToSimpleMinimalDFA(regexp);
 
-			console.log("Conversion takes " + (timeNow() - tBeforeConversion) + " milliseconds.");
+			var tAfterConversion = timeNow();
+
+			console.log("Regexp: " + regexp);
+
+			console.log("Conversion takes " + (tBeforeConversion - tBeforeConversion) + " milliseconds.");
+
+			console.log("DFA (below):");
 
 			console.log(simpleMinimalDFA);
 
@@ -48,7 +54,7 @@ define(
 
 			var traverser = new Traverser(biverseDFA);
 
-			var inputString = "abc";
+			var inputString = "d";
 
 			console.log("Input: " + inputString);
 			console.log("");
@@ -57,7 +63,7 @@ define(
 
 			var results = traverser.execute(createInput(inputString));
 
-			console.log("Milliseconds taken: " + (timeNow() - tBeforeExecution));
+			console.log("Execution takes " + (timeNow() - tBeforeExecution) + " milliseconds.");
 
 			printResults(results);
 		}
@@ -112,9 +118,12 @@ define(
 		function printResults (results) {
 			var resultsCount = results.length;
 
+			console.log("\nResults are below.");
+			console.log("==================");
+
 			for (var resultId = 0; resultId < resultsCount; resultId ++) {
 
-				console.log("\nResult #" + resultId + ":");
+				console.log("Result #" + resultId + ":");
 
 				var currentRecord = results[resultId];
 

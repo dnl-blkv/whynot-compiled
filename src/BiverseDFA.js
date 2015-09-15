@@ -9,7 +9,6 @@ define(
 		/**
 		 * Describes an automaton representing a regular rule.
 		 *
-		 * @param initialState
 		 * @param transitions
 		 * @param reverseTransitions
 		 * @param finalStates
