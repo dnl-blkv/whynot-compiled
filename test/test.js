@@ -17,8 +17,6 @@ define(
 		var BiverseDFA = whynotPremadePlayer.BiverseDFA;
 		var Traverser = whynotPremadePlayer.Traverser;
 
-		console.log(NFA.regExpToDFA('(a((ab)|(ca)))'));
-
 		function createInput(array) {
 			var i = 0;
 			return function () {
@@ -28,40 +26,21 @@ define(
 
 		function testAutomaton () {
 
-			//var transitions = [
-			//	{"a": 1, "b": 2},
-			//	{"d": 3},
-			//	{"c": 4},
-			//	{"e": 5, "f": 6},
-			//	{"d": 3},
-			//	{},
-			//	{}
-			//];
-			//
-			//var finalStates = [5, 6];
+			// REGEXP TO DFA CONVERSION PART
+			var tBeforeConversion = timeNow();
 
-			//(abc)|(adec)
+			var regexp = '(a|(bc))d(e|f)';
 
-			var transitions = [
-				{"a": 1},
-				{"b": 2, "d": 3},
-				{"c": 0},
-				{"e": 2}
-			];
+			var simpleMinimalDFA = NFA.regExpToSimpleMinimalDFA(regexp);
 
-			var finalStates = [0];
+			console.log("Conversion takes " + (timeNow() - tBeforeConversion) + " milliseconds.");
 
-			//(abc)|(adec)*
-			//
-			//var transitions = [
-			//	{"a": 1},
-			//	{"b": 2, "d": 3},
-			//	{"c": 4},
-			//	{"e": 2},
-			//	{}
-			//];
-			//
-			//var finalStates = [4];
+			console.log(simpleMinimalDFA);
+
+			// DFA EXECUTION PART
+			var transitions = simpleMinimalDFA.transitions;
+
+			var finalStates = simpleMinimalDFA.finalStates;
 
 			var reverseTransitions = createReverseTransitions(transitions);
 
@@ -69,17 +48,16 @@ define(
 
 			var traverser = new Traverser(biverseDFA);
 
-			var inputString = "ac";
+			var inputString = "abc";
 
 			console.log("Input: " + inputString);
 			console.log("");
 
-			var t1 = timeNow();
+			var tBeforeExecution = timeNow();
 
 			var results = traverser.execute(createInput(inputString));
 
-			var t2 = timeNow();
-			console.log("Milliseconds taken: " + (t2 - t1));
+			console.log("Milliseconds taken: " + (timeNow() - tBeforeExecution));
 
 			printResults(results);
 		}
