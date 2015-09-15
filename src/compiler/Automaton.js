@@ -34,26 +34,58 @@ define(
 			this.finalStates = [];
 		}
 
+		/**
+		 * Set initial states of an automaton.
+		 *
+		 * @param initialState
+		 */
 		Automaton.prototype.setInitialStates = function (initialState) {
 			this.initialStates = initialState;
 		};
 
+		/**
+		 * Get copy of initial states of an automaton.
+		 *
+		 * @returns {Array.<T>}
+		 */
 		Automaton.prototype.getInitialStates = function () {
 			return this.initialStates.slice();
 		};
 
+		/**
+		 * Get amount of states in an automaton.
+		 *
+		 * @returns {Array}
+		 */
 		Automaton.prototype.getStatesCount = function () {
 			return this.statesCount;
 		};
 
+		/**
+		 * Get amount of transitions in an automaton.
+		 *
+		 * @returns {Number}
+		 */
 		Automaton.prototype.getTransitionsCount = function () {
 			return this.transitions.length;
 		};
 
+		/**
+		 * Set amount of states in an automaton.
+		 *
+		 * @param statesCount
+		 */
 		Automaton.prototype.setStatesCount = function (statesCount) {
 			this.statesCount = statesCount;
 		};
 
+		/**
+		 *
+		 *
+		 * @param stateFrom
+		 * @param stateTo
+		 * @param character
+		 */
 		Automaton.prototype.addTransition = function (stateFrom, stateTo, character) {
 
 			var newTransition = new Transition(stateFrom, stateTo, character);
@@ -61,10 +93,20 @@ define(
 			this.transitions.push(newTransition);
 		};
 
+		/**
+		 * Set final states of an automaton.
+		 *
+		 * @param finalState
+		 */
 		Automaton.prototype.setFinalStates = function (finalState) {
 			this.finalStates = finalState;
 		};
 
+		/**
+		 * Get a copy of final states of an automaton.
+		 *
+		 * @returns {Array.<T>}
+		 */
 		Automaton.prototype.getFinalStates = function () {
 			return this.finalStates.slice();
 		};
@@ -215,6 +257,12 @@ define(
 			return result;
 		};
 
+		/**
+		 * Convert a regular expression to a NFA.
+		 *
+		 * @param regularExpression
+		 * @returns {Automaton}
+		 */
 		Automaton.fromRegExp = function (regularExpression) {
 
 			// Create an AST for a given regular expression
@@ -224,31 +272,48 @@ define(
 			return astToNFA(regularExpressionAST);
 		};
 
-		Automaton.toDFA = function(nfa) {
-
-			// Return determinized NFA
-			return determinize(nfa);
-		}
-		
+		/**
+		 * Convert a regular expression to a DFA.
+		 * @param regularExpression
+		 * @returns {Automaton}
+		 */
 		Automaton.regExpToDFA = function (regularExpression) {
 
 			// Create an NFA from a given regular expression
 			var nfa = Automaton.fromRegExp(regularExpression);
 
 			// Return determinized NFA
-			return Automaton.toDFA(nfa);
+			return determinize(nfa);
 		};
 
-		Automaton.minimNFAize = function (nfa) {
+		/**
+		 * Minimize a given NFA to get a minimal DFA.
+		 *
+		 * @param nfa
+		 * @returns {Automaton}
+		 */
+		Automaton.minimizeNFA = function (nfa) {
 			return determinize(reverse(determinize(reverse(determinize(nfa)))));
 		};
 
+		/**
+		 * Convert a regular expression to a minimal DFA.
+		 *
+		 * @param regularExpression
+		 * @returns {Automaton}
+		 */
 		Automaton.regExpToMinimalDFA = function (regularExpression) {
 			var dfa = Automaton.regExpToDFA(regularExpression);
 
-			return Automaton.minimNFAize(dfa);
+			return Automaton.minimizeNFA(dfa);
 		};
 
+		/**
+		 * Convert a regular expression to a minimal DFA in a simple notion.
+		 *
+		 * @param regularExpression
+		 * @returns {*}
+		 */
 		Automaton.regExpToSimpleMinimalDFA = function (regularExpression) {
 			var minimalDFA = Automaton.regExpToMinimalDFA(regularExpression);
 
@@ -263,7 +328,7 @@ define(
 		 */
 		function astToNFA (ast) {
 
-			var result = new Automaton();
+			var nfa = new Automaton();
 
 			var currentNodeID, currentNodeNFA;
 
@@ -271,22 +336,22 @@ define(
 				case 'test':
 
 					// Generate a simple test NFA
-					result.setStatesCount(2);
-					result.setInitialStates([0]);
-					result.setFinalStates([1]);
-					result.addTransition(0, 1, ast[1]);
+					nfa.setStatesCount(2);
+					nfa.setInitialStates([0]);
+					nfa.setFinalStates([1]);
+					nfa.addTransition(0, 1, ast[1]);
 
 					break;
 
 				case 'seq':
 
 					// Concat first two elements
-					result = Automaton.concat(astToNFA(ast[1]), astToNFA(ast[2]));
+					nfa = Automaton.concat(astToNFA(ast[1]), astToNFA(ast[2]));
 
 					for (currentNodeID = 3; currentNodeID < ast.length; ++ currentNodeID) {
 						currentNodeNFA = astToNFA(ast[currentNodeID]);
 
-						result = Automaton.concat(result, currentNodeNFA);
+						nfa = Automaton.concat(nfa, currentNodeNFA);
 					}
 
 					break;
@@ -301,7 +366,7 @@ define(
 						choices.push(currentNodeNFA);
 					}
 
-					result = Automaton.choice(choices);
+					nfa = Automaton.choice(choices);
 
 					break;
 
@@ -309,7 +374,7 @@ define(
 					break;
 			}
 
-			return result;
+			return nfa;
 		}
 
 		/**
