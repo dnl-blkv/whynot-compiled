@@ -28,17 +28,16 @@ define(
 		function testAutomaton () {
 
 			// REGEXP TO DFA CONVERSION PART
-			var tBeforeConversion = timeNow();
 
-			var regexp = '(a|(bc))d(e|f)';
-
-			var simpleMinimalDFA = Automaton.regExpToSimpleMinimalDFA(regexp);
-
-			var tAfterConversion = timeNow();
+			var regexp = '((a|(bc))d(e|f))*';
 
 			console.log("Regexp: " + regexp);
 
-			console.log("Conversion takes " + (tBeforeConversion - tBeforeConversion) + " milliseconds.");
+			console.time('compilation');
+
+			var simpleMinimalDFA = Automaton.regExpToSimpleMinimalDFA(regexp);
+
+			console.timeEnd('compilation');
 
 			console.log("DFA (below):");
 
@@ -55,16 +54,20 @@ define(
 
 			var traverser = new Traverser(biverseDFA);
 
-			var inputString = "d";
+			var inputString = "adadef";
 
 			console.log("Input: " + inputString);
 			console.log("");
 
-			var tBeforeExecution = timeNow();
+			console.time('execution');
+
+			for (var i = 0; i < 99999; i ++) {
+				traverser.execute(createInput(inputString));
+			}
 
 			var results = traverser.execute(createInput(inputString));
 
-			console.log("Execution takes " + (timeNow() - tBeforeExecution) + " milliseconds.");
+			console.timeEnd('execution');
 
 			printResults(results);
 		}
@@ -163,9 +166,5 @@ define(
 		}
 
 		testAutomaton();
-
-		return {
-			Automaton: Traverser
-		};
 	}
 );

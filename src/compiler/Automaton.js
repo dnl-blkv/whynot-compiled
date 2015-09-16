@@ -112,68 +112,68 @@ define(
 		};
 
 		/**
-		 * Concatenate two NFA.
+		 * Concatenate two automata.
 		 *
-		 * @param leftNFA
-		 * @param rightNFA
+		 * @param leftAutomaton
+		 * @param rightAutomaton
 		 * @returns {Automaton}
 		 */
-		Automaton.concat = function (leftNFA, rightNFA) {
+		Automaton.concat = function (leftAutomaton, rightAutomaton) {
 
 			// Create an empty NFA to save the result
 			var result = new Automaton();
 
 			// Set the amount of states for the resulting NFA
-			result.setStatesCount(leftNFA.getStatesCount() + rightNFA.getStatesCount());
+			result.setStatesCount(leftAutomaton.getStatesCount() + rightAutomaton.getStatesCount());
 
 			// Set the new initial states for the new NFA
-			result.setInitialStates(leftNFA.getInitialStates());
+			result.setInitialStates(leftAutomaton.getInitialStates());
 
 			// Declare counter and temporal variable for storing transitions
 			var currentTransitionID, newTransition;
 
-			var leftTransitionsCount = leftNFA.getTransitionsCount();
+			var leftTransitionsCount = leftAutomaton.getTransitionsCount();
 
 			// Loop over left NFA's transitions
 			for (currentTransitionID = 0; currentTransitionID < leftTransitionsCount; ++ currentTransitionID) {
 
 				// Save the current transition for reference
-				newTransition = leftNFA.transitions[currentTransitionID];
+				newTransition = leftAutomaton.transitions[currentTransitionID];
 
 				// Add a copy of the new transition to the resulting NFA
 				result.addTransition(newTransition.stateFrom, newTransition.stateTo, newTransition.character);
 			}
 
-			var leftFinalStates = leftNFA.getFinalStates();
+			var leftFinalStates = leftAutomaton.getFinalStates();
 
 			// Connect the left NFA with the right one
 			for (var currentLeftFinalStateID = 0; currentLeftFinalStateID < leftFinalStates.length; ++ currentLeftFinalStateID) {
 				var currentLeftFinalState = leftFinalStates[currentLeftFinalStateID];
 
-				result.addTransition(currentLeftFinalState, leftNFA.getStatesCount(), "");
+				result.addTransition(currentLeftFinalState, leftAutomaton.getStatesCount(), "");
 			}
 
-			var rightTransitionsCount = rightNFA.getTransitionsCount();
+			var rightTransitionsCount = rightAutomaton.getTransitionsCount();
 
 			// Loop over right NFA's transitions
 			for (currentTransitionID = 0; currentTransitionID < rightTransitionsCount; ++ currentTransitionID) {
 
 				// Save the current transition for reference
-				newTransition = rightNFA.transitions[currentTransitionID];
+				newTransition = rightAutomaton.transitions[currentTransitionID];
 
 				// Add a shifted copy of the new transition to the resulting NFA
-				result.addTransition(newTransition.stateFrom + leftNFA.getStatesCount(),
-					newTransition.stateTo + leftNFA.getStatesCount(), newTransition.character);
+				result.addTransition(newTransition.stateFrom + leftAutomaton.getStatesCount(),
+					newTransition.stateTo + leftAutomaton.getStatesCount(), newTransition.character);
 			}
 
 			// Copy the right NFA final states to define a new NFA final states array
-			var newFinalStates = rightNFA.getFinalStates();
+			var newFinalStates = rightAutomaton.getFinalStates();
 
 			// Loop over the new final states
 			for (var currentFinalStateID = 0; currentFinalStateID < newFinalStates.length; ++ currentFinalStateID) {
 
 				// Shift each state
-				newFinalStates[currentFinalStateID] += leftNFA.getStatesCount();
+				newFinalStates[currentFinalStateID] += leftAutomaton.getStatesCount();
 			}
 
 			// Set the new final states
@@ -184,7 +184,7 @@ define(
 		};
 
 		/**
-		 * Parallelize given NFA.
+		 * Parallelize given automata.
 		 *
 		 * @param choices
 		 * @returns {Automaton}
@@ -254,6 +254,39 @@ define(
 			result.setFinalStates([statesCount - 1]);
 
 			// Return the parallely connected choices
+			return result;
+		};
+
+		/**
+		 * Apply kleene star operation to an automaton.
+		 *
+		 * @param automaton
+		 * @returns {Automaton}
+		 */
+		Automaton.repetition = function (automaton) {
+
+			var result = new Automaton();
+
+			result.setStatesCount(automaton.getStatesCount() + 2);
+
+			result.setInitialStates([0]);
+
+			result.addTransition(0, automaton.getStatesCount() + 1, '');
+			result.addTransition(0, 1, '');
+
+			var transitionsCount = automaton.getTransitionsCount();
+
+			for (var currentTransitionID = 0; currentTransitionID < transitionsCount; ++ currentTransitionID) {
+				var currentTransition = automaton.transitions[currentTransitionID];
+
+				result.addTransition(currentTransition.stateFrom + 1, currentTransition.stateTo + 1, currentTransition.character);
+			}
+
+			result.addTransition(automaton.getStatesCount(), 1, '');
+			result.addTransition(automaton.getStatesCount(), automaton.getStatesCount() + 1, '');
+
+			result.setFinalStates([automaton.getStatesCount() + 1]);
+
 			return result;
 		};
 
@@ -367,6 +400,14 @@ define(
 					}
 
 					nfa = Automaton.choice(choices);
+
+					break;
+
+				case 'repetition':
+
+					var argumentNFA = astToNFA(ast[1]);
+
+					nfa = Automaton.repetition(argumentNFA);
 
 					break;
 

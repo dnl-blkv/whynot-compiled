@@ -84,8 +84,6 @@ define(
 
 					if (earlierState === currentState) {
 
-						console.log("Loop broken in state: " + earlierState);
-
 						hasLoops = true;
 
 						break;
