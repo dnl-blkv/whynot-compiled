@@ -1,7 +1,7 @@
 {
   "name": "whynot-premade-player",
-  "version": "0.1.0",
-  "description": "Player for the DFA pre-made by Whynot.js, a Generic VM-based structure matching framework",
+  "version": "0.2.3",
+  "description": "Pre-made DFA compilation and Whynot.js-style execution system.",
   "keywords": [
     "Language",
     "Matching",
@@ -12,7 +12,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dnl-blkv/whynot-premade-player"
+    "url": "https://github.com/dnl-blkv/whynot-premade"
   },
   "devDependencies": {
     "requirejs": "^2.1.20"

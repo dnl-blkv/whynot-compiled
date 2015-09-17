@@ -3,12 +3,10 @@
  */
 define(
 	[
-		'regexParser',
-		'whynotPremadeCompiler',
-		'whynotPremadePlayer'
+		'whynot-premade-compiler',
+		'whynot-premade-player'
 	],
 	function(
-		regexParser,
 		whynotPremadeCompiler,
 		whynotPremadePlayer
 	) {
@@ -18,7 +16,7 @@ define(
 		var BiverseDFA = whynotPremadePlayer.BiverseDFA;
 		var Traverser = whynotPremadePlayer.Traverser;
 
-		function createInput(array) {
+		function createInput (array) {
 			var i = 0;
 			return function () {
 				return array[i++] || null;
@@ -29,7 +27,7 @@ define(
 
 			// REGEXP TO DFA CONVERSION PART
 
-			var regexp = '((a|(bc))d(e|f))*';
+			var regexp = '(a|(bc))d(e|f)';
 
 			console.log("Regexp: " + regexp);
 
@@ -48,13 +46,13 @@ define(
 
 			var finalStates = simpleMinimalDFA.finalStates;
 
-			var reverseTransitions = createReverseTransitions(transitions);
-
-			var biverseDFA = new BiverseDFA(transitions, reverseTransitions, finalStates);
+			console.time('dfa-loading');
+			var biverseDFA = new BiverseDFA(transitions, finalStates);
+			console.timeEnd('dfa-loading');
 
 			var traverser = new Traverser(biverseDFA);
 
-			var inputString = "adadef";
+			var inputString = "ad";
 
 			console.log("Input: " + inputString);
 			console.log("");
@@ -70,48 +68,6 @@ define(
 			console.timeEnd('execution');
 
 			printResults(results);
-		}
-
-		function timeNow () {
-			var d = new Date();
-			return d.getTime();
-		}
-
-		/**
-		 * Create reverse transition table out of a given transition table.
-		 *
-		 * @param transitions
-		 * @returns {Array}
-		 */
-		function createReverseTransitions (transitions) {
-
-			var reverseTransitions = [];
-
-			var statesCount = transitions.length;
-
-			for (var stateNumber = 0; stateNumber < statesCount; stateNumber ++) {
-				reverseTransitions[stateNumber] = {};
-
-				var stateTransitionKeys = Object.keys(transitions[stateNumber]);
-
-				var stateTransitionKeysCount = stateTransitionKeys.length;
-
-				for (var stateTransitionKeyId = 0; stateTransitionKeyId < stateTransitionKeysCount; stateTransitionKeyId ++) {
-					var stateTransitionKey = stateTransitionKeys[stateTransitionKeyId];
-
-					var transition = transitions[stateNumber][stateTransitionKey];
-
-					var transitionString = transition + '';
-
-					if (reverseTransitions[stateNumber][transitionString] === undefined) {
-						reverseTransitions[stateNumber][transitionString] = [];
-					}
-
-					reverseTransitions[stateNumber][transitionString].push(stateTransitionKey);
-				}
-			}
-
-			return reverseTransitions;
 		}
 
 		/**

@@ -8,11 +8,11 @@ require.config({
 
 	"packages": [
 		{
-			"name": "whynotPremadePlayer",
+			"name": "whynot-premade-player",
 			"location": "../src/player"
 		},
 		{
-			"name": "whynotPremadeCompiler",
+			"name": "whynot-premade-compiler",
 			"location": "../src/compiler"
 		}
 	],

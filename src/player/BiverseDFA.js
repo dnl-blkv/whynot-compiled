@@ -14,34 +14,34 @@ define(
 		 * @param finalStates
 		 * @constructor
 		 */
-		function BiverseDFA(transitions, reverseTransitions, finalStates) {
+		function BiverseDFA(transitions, finalStates, reverseTransitions) {
 
 			// Define transitions table
 			this.transitions = transitions;
 
 			if (this.transitions === undefined) {
-				console.log("transitions were not set for an Traverser!");
+				console.log("transitions were not set for a Traverser!");
 				this.transitions = [];
-			}
-
-			// Define reverse transitions table
-			this.reverseTransitions = reverseTransitions;
-
-			if (this.reverseTransitions === undefined) {
-				console.log("reverse transitions were not set for an Traverser!");
-				this.reverseTransitions = [];
 			}
 
 			// Define final states array
 			this.finalStates = finalStates;
 
 			if (this.finalStates === undefined) {
-				console.log("finalStates were not set for an Traverser!");
+				console.log("finalStates were not set for a Traverser!");
 				this.finalStates = [];
 			}
 
+			// Define reverse transitions table
+			this.reverseTransitions = reverseTransitions;
+
+			if (this.reverseTransitions === undefined) {
+				console.log("reverse transitions were not set for a Traverser!");
+				this.reverseTransitions = BiverseDFA.createReverseTransitions(transitions);
+			}
+
 			// Set the initial state, it's always 0 for these simplified automata
-			this.initialStates = 0;
+			this.initialState = BiverseDFA.INITIAL_STATE;
 		}
 
 		/**
@@ -95,6 +95,43 @@ define(
 
 			// Return the next state
 			return currentStateTransitions[inputItem];
+		};
+
+		/**
+		 * Create reverse transition table out of a given transition table.
+		 *
+		 * @param transitions
+		 * @returns {Array}
+		 */
+		BiverseDFA.createReverseTransitions = function (transitions) {
+
+			var reverseTransitions = [];
+
+			var statesCount = transitions.length;
+
+			for (var stateNumber = 0; stateNumber < statesCount; stateNumber ++) {
+				reverseTransitions[stateNumber] = {};
+
+				var stateTransitionKeys = Object.keys(transitions[stateNumber]);
+
+				var stateTransitionKeysCount = stateTransitionKeys.length;
+
+				for (var stateTransitionKeyId = 0; stateTransitionKeyId < stateTransitionKeysCount; stateTransitionKeyId ++) {
+					var stateTransitionKey = stateTransitionKeys[stateTransitionKeyId];
+
+					var transition = transitions[stateNumber][stateTransitionKey];
+
+					var transitionString = transition + '';
+
+					if (reverseTransitions[stateNumber][transitionString] === undefined) {
+						reverseTransitions[stateNumber][transitionString] = [];
+					}
+
+					reverseTransitions[stateNumber][transitionString].push(stateTransitionKey);
+				}
+			}
+
+			return reverseTransitions;
 		}
 
 		return BiverseDFA;

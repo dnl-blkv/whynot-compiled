@@ -22,10 +22,10 @@ define(
 		function Automaton () {
 
 			// Save the initial state
-			this.initialStates = [];
+			this.initialState = [];
 
 			// Save the states array
-			this.statesCount = [];
+			this.statesCount = 0;
 
 			// Save the array for transitions
 			this.transitions = [];
@@ -40,7 +40,7 @@ define(
 		 * @param initialState
 		 */
 		Automaton.prototype.setInitialStates = function (initialState) {
-			this.initialStates = initialState;
+			this.initialState = initialState;
 		};
 
 		/**
@@ -49,13 +49,13 @@ define(
 		 * @returns {Array.<T>}
 		 */
 		Automaton.prototype.getInitialStates = function () {
-			return this.initialStates.slice();
+			return this.initialState.slice();
 		};
 
 		/**
 		 * Get amount of states in an automaton.
 		 *
-		 * @returns {Array}
+		 * @returns {Number}
 		 */
 		Automaton.prototype.getStatesCount = function () {
 			return this.statesCount;
