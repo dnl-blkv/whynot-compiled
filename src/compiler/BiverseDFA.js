@@ -98,6 +98,15 @@ define(
 		};
 
 		/**
+		 * return an initial state of a given Biverse DFA
+		 *
+		 * @returns {number|*}
+		 */
+		BiverseDFA.prototype.getInitialState = function () {
+			return this.initialState;
+		};
+
+		/**
 		 * Create reverse transition table out of a given transition table.
 		 *
 		 * @param transitions

@@ -3,7 +3,7 @@
  */
 define(
 	[
-		'./arrayUtils',
+		'./util/arrayUtils',
 		'regexParser',
 		'./Transition'
 	],

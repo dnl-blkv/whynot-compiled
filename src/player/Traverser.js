@@ -3,11 +3,9 @@
  */
 define(
 	[
-		'./BiverseDFA',
 		'./Record'
 	],
 	function(
-		BiverseDFA,
 		Record
 	) {
 		'use strict';
@@ -33,7 +31,7 @@ define(
 			this.finalRecords = [];
 
 			// Create an initial record
-			var initialRecord = createInitialRecord();
+			var initialRecord = createInitialRecord(this);
 
 			// Define the tail records
 			this.tailRecords = [initialRecord];
@@ -206,12 +204,14 @@ define(
 		 * @param traverser
 		 * @returns {Record}
 		 */
-		function createInitialRecord () {
+		function createInitialRecord (traverser) {
+
+			var biverseDFA = traverser.biverseDFA;
 
 			// Return a new initial record
 			return new Record(
 				null,
-				BiverseDFA.INITIAL_STATE,
+				biverseDFA.getInitialState(),
 				[''],
 				false
 			);

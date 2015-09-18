@@ -13,7 +13,7 @@ define(
 		'use strict';
 
 		var Automaton = whynotPremadeCompiler.Automaton;
-		var BiverseDFA = whynotPremadePlayer.BiverseDFA;
+		var BiverseDFA = whynotPremadeCompiler.BiverseDFA;
 		var Traverser = whynotPremadePlayer.Traverser;
 
 		function createInput (array) {

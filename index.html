@@ -7,5 +7,10 @@
 <body>
 <script data-main="test/test.js" src="node_modules/requirejs/require.js"></script>
 <script src="test/setup.js"></script>
+<script>
+	require.config({
+		"baseUrl": "./test"
+	});
+</script>
 </body>
 </html>

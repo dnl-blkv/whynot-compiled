@@ -14,7 +14,13 @@
     "type": "git",
     "url": "https://github.com/dnl-blkv/whynot-premade"
   },
+  "scripts": {
+    "test-dev": "testem -f test/testem.json"
+  },
   "devDependencies": {
-    "requirejs": "^2.1.20"
+    "requirejs": "^2.1.20",
+    "testem": "^0.9.4",
+    "chai": "^3.2.0",
+    "mocha": "^2.3.2"
   }
 }

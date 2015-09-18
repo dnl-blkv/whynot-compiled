@@ -1,6 +1,6 @@
 // Require.js config
 require.config({
-	"baseUrl": "test",
+	"baseUrl": "/test",
 
 	"paths": {
 		"regexParser": "../src/compiler/util/regexParser"

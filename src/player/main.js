@@ -8,17 +8,14 @@
  */
 define(
 	[
-		'./BiverseDFA',
 		'./Traverser'
 	],
 	function(
-		BiverseDFA,
 		Traverser
 	) {
 		'use strict';
 
 		return {
-			BiverseDFA: BiverseDFA,
 			Traverser: Traverser
 		};
 	}
