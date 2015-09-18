@@ -33,22 +33,13 @@ define(
 
 			console.time('compilation');
 
-			var simpleMinimalDFA = Automaton.regExpToSimpleMinimalDFA(regexp);
+			var biverseDFA = Automaton.regExpToBiverseDFA(regexp);
 
 			console.timeEnd('compilation');
 
 			console.log("DFA (below):");
 
-			console.log(simpleMinimalDFA);
-
-			// DFA EXECUTION PART
-			var transitions = simpleMinimalDFA.transitions;
-
-			var finalStates = simpleMinimalDFA.finalStates;
-
-			console.time('dfa-loading');
-			var biverseDFA = new BiverseDFA(transitions, finalStates);
-			console.timeEnd('dfa-loading');
+			console.log(biverseDFA);
 
 			var traverser = new Traverser(biverseDFA);
 

@@ -20,7 +20,6 @@ define(
 			this.transitions = transitions;
 
 			if (this.transitions === undefined) {
-				console.log("transitions were not set for a Traverser!");
 				this.transitions = [];
 			}
 
@@ -28,7 +27,6 @@ define(
 			this.finalStates = finalStates;
 
 			if (this.finalStates === undefined) {
-				console.log("finalStates were not set for a Traverser!");
 				this.finalStates = [];
 			}
 
@@ -36,7 +34,6 @@ define(
 			this.reverseTransitions = reverseTransitions;
 
 			if (this.reverseTransitions === undefined) {
-				console.log("reverse transitions were not set for a Traverser!");
 				this.reverseTransitions = BiverseDFA.createReverseTransitions(transitions);
 			}
 

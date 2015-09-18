@@ -26,11 +26,44 @@ define(
 				};
 			}
 
-			//
+			function processResults (results) {
+
+				var resultsCount = results.length;
+
+				var processedResults = [];
+
+				for (var resultId = 0; resultId < resultsCount; ++ resultId) {
+
+					var currentRecord = results[resultId];
+
+					var currentResult = [];
+
+					while (currentRecord !== null) {
+
+						if (currentRecord.getPreviousRecord() === null) {
+							break;
+						}
+
+						currentResult.unshift(currentRecord.getCharacters());
+
+						currentRecord = currentRecord.getPreviousRecord();
+					}
+
+					processedResults.push(currentResult);
+				}
+
+				return processedResults;
+			}
+
+			// Testing with regular expressions
+			// Currently regular expressions converter supports the following elements:
+			// '(' and ')' for grouping
+			// '|' for alternation
+			// '*' for zero-or-more repetition (kleene star)
+			// + plain concatentaion
 			describe('regular expressions', function() {
-				it('can perform simple matching', function() {
-					var simpleMinimalDFA = Automaton.regExpToSimpleMinimalDFA('abc(d|e)f');
-					var biverseDFA = new BiverseDFA(simpleMinimalDFA.transitions, simpleMinimalDFA.finalStates);
+				it('can perform simple regex matching', function () {
+					var biverseDFA = Automaton.regExpToBiverseDFA('abc(d|e)f');
 					var traverser = new Traverser(biverseDFA);
 
 					// Check for fully matching result
@@ -38,22 +71,28 @@ define(
 					chai.expect(fullMatchResult.length).to.equal(1);
 					chai.expect(fullMatchResult[0].getAcceptedCount()).to.equal(5);
 					chai.expect(fullMatchResult[0].getMissingCount()).to.equal(0);
-
-					// Check for partially matching result
-					var partialMatchResult = traverser.execute(createInput('abcf'));
-					chai.expect(partialMatchResult.length).to.equal(1);
-					chai.expect(partialMatchResult[0].getAcceptedCount()).to.equal(4);
-					chai.expect(partialMatchResult[0].getMissingCount()).to.equal(1);
-
-					var missingRecord = partialMatchResult[0].getPreviousRecord();
-					chai.expect(missingRecord.getAccepted()).to.equal(false);
-					chai.expect(missingRecord.getCharacters()).to.deep.equal(['d', 'e']);
-
-					// Check for entriely mismatching result
-					var mismatchingResult = traverser.execute(createInput('abcdfg'));
-					chai.expect(mismatchingResult.length).to.equal(0);
 				});
 
+				it('can complete a string based on a regex', function () {
+					// Check for partially matching result
+					var biverseDFA = Automaton.regExpToBiverseDFA('(a|(bc))d(e|f)');
+					var traverser = new Traverser(biverseDFA);
+
+					chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
+						[['a'], ['d'], ['e', 'f']]
+					]);
+
+					chai.expect(processResults(traverser.execute(createInput('bf')))).to.deep.equal([
+						[['b'], ['c'], ['d'], ['f']]
+					]);
+
+					chai.expect(processResults(traverser.execute(createInput('d')))).to.deep.equal([
+						[['a'], ['d'], ['e', 'f']],
+						[['b'], ['c'], ['d'], ['e', 'f']]
+					]);
+
+					chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
+				});
 			});
 		});
 	}

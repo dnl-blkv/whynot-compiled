@@ -4,11 +4,13 @@
 define(
 	[
 		'./util/arrayUtils',
+		'./BiverseDFA',
 		'regexParser',
 		'./Transition'
 	],
 	function(
 		arrayUtils,
+		BiverseDFA,
 		regexParser,
 		Transition
 	) {
@@ -335,7 +337,7 @@ define(
 		 * @param regularExpression
 		 * @returns {Automaton}
 		 */
-		Automaton.regExpToMinimalDFA = function (regularExpression) {
+		Automaton.regExpToMinimalDeterministicAutomaton = function (regularExpression) {
 			var dfa = Automaton.regExpToDFA(regularExpression);
 
 			return Automaton.minimizeNFA(dfa);
@@ -347,10 +349,10 @@ define(
 		 * @param regularExpression
 		 * @returns {*}
 		 */
-		Automaton.regExpToSimpleMinimalDFA = function (regularExpression) {
-			var minimalDFA = Automaton.regExpToMinimalDFA(regularExpression);
+		Automaton.regExpToBiverseDFA = function (regularExpression) {
+			var minimalDeterministicAutomaton = Automaton.regExpToMinimalDeterministicAutomaton(regularExpression);
 
-			return getSimpleNotionOfAMinimalDFA(minimalDFA);
+			return minialDeterministicAutomatonToBiverseDFA(minimalDeterministicAutomaton);
 		};
 
 		/**
@@ -707,13 +709,10 @@ define(
 			return reverseAutomaton;
 		}
 
-		function getSimpleNotionOfAMinimalDFA (minimalDFA) {
+		function minialDeterministicAutomatonToBiverseDFA (minimalDFA) {
 
-			// Define a variable for the result
-			var simpleNotion = {
-				'transitions': [],
-				'finalStates': []
-			};
+			// Define a variable for the transitions
+			var transitions = [];
 
 			// Save the DFA states for reference
 			var statesCount = minimalDFA.getStatesCount();
@@ -738,14 +737,11 @@ define(
 				}
 
 				// Add the newly made transitions
-				simpleNotion['transitions'].push(currentStateTransitions);
+				transitions.push(currentStateTransitions);
 			}
 
-			// Set the final states
-			simpleNotion['finalStates'] = minimalDFA.getFinalStates();
-
 			// Return the simple minimal notion of a given DFA
-			return simpleNotion;
+			return new BiverseDFA(transitions, minimalDFA.getFinalStates());
 		}
 
 		return Automaton;
