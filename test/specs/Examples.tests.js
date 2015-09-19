@@ -26,6 +26,97 @@ define(
 				};
 			}
 
+			// Convert records chain to an array of vertical choices
+			function recordsChainToVerticalChoicesArray (chainTail) {
+
+				var verticalChoicesArray = [];
+
+				var currentRecord = chainTail;
+
+				// Iterate over the records chain
+				// Converting the list to the reverse array
+				while (currentRecord.getPreviousRecord() !== null) {
+
+					// Add each record to the array beginning
+					verticalChoicesArray.unshift(currentRecord.characters);
+
+					// Go to the previous record
+					currentRecord = currentRecord.getPreviousRecord();
+				}
+
+				// Return the resulting array of char choices for each step
+				return verticalChoicesArray;
+			}
+
+			function transportVerticalChoicesArray (verticalChoicesArray) {
+
+				var horizontalChoices = [];
+
+				var oldHorizontalChoicesCount = 0;
+
+				for (var currentStepID = 0; currentStepID < verticalChoicesArray.length; ++ currentStepID) {
+
+					var currentStepChoices = verticalChoicesArray[currentStepID];
+
+					var currentStepChoicesCount = currentStepChoices.length;
+
+					for (var currentChoiceID = 0; currentChoiceID < currentStepChoicesCount; ++ currentChoiceID) {
+
+						var currentChoiceCharacter = currentStepChoices[currentChoiceID];
+
+						if (currentStepID === 0) {
+
+							horizontalChoices.push([currentChoiceCharacter]);
+
+						} else {
+
+							var shiftedCurrentChoiceID = ((currentChoiceID + 1) % currentStepChoicesCount);
+
+							for (var currentOldChoiceID = 0; currentOldChoiceID < oldHorizontalChoicesCount; ++ currentOldChoiceID) {
+
+								var currentOldChoice = horizontalChoices[currentOldChoiceID];
+
+								if (shiftedCurrentChoiceID === 0) {
+
+									currentOldChoice.push(currentChoiceCharacter);
+
+								} else {
+
+									var newChoice = currentOldChoice.slice();
+
+									newChoice.push(currentChoiceCharacter);
+
+									horizontalChoices.push(newChoice);
+								}
+							}
+						}
+					}
+
+					oldHorizontalChoicesCount = horizontalChoices.length;
+				}
+
+				return horizontalChoices;
+			}
+
+			function flattenResults (results) {
+				var resultsCount = results.length;
+
+				var flatResults = [];
+
+				for (var resultId = 0; resultId < resultsCount; ++ resultId) {
+
+					var currentRecord = results[resultId];
+
+					var currentRecordVerticalChoices = recordsChainToVerticalChoicesArray(currentRecord);
+
+					var currentRecordFlatChoices = transportVerticalChoicesArray(currentRecordVerticalChoices);
+
+					flatResults = flatResults.concat(currentRecordFlatChoices);
+				}
+
+				return flatResults;
+			}
+
 			function processResults (results) {
 
 				var resultsCount = results.length;
@@ -36,20 +127,9 @@ define(
 
 					var currentRecord = results[resultId];
 
-					var currentResult = [];
+					var currentFlatRecord = recordsChainToVerticalChoicesArray(currentRecord);
 
-					while (currentRecord !== null) {
-
-						if (currentRecord.getPreviousRecord() === null) {
-							break;
-						}
-
-						currentResult.unshift(currentRecord.getCharacters());
-
-						currentRecord = currentRecord.getPreviousRecord();
-					}
-
-					processedResults.push(currentResult);
+					processedResults.push(currentFlatRecord);
 				}
 
 				return processedResults;
