@@ -9,8 +9,7 @@ define(
 		) {
 		'use strict';
 
-		var Automaton = whynotPremadeCompiler.Automaton;
-		var BiverseDFA = whynotPremadeCompiler.BiverseDFA;
+		var Compiler = whynotPremadeCompiler.Compiler;
 
 		var Traverser = whynotPremadePlayer.Traverser;
 
@@ -143,7 +142,7 @@ define(
 			// + plain concatentaion
 			describe('regular expressions', function() {
 				it('can perform simple regex matching', function () {
-					var biverseDFA = Automaton.regExpToBiverseDFA('abc(d|e)f');
+					var biverseDFA = Compiler.regExpToBiverseDFA('abc(d|e)f');
 					var traverser = new Traverser(biverseDFA);
 
 					// Check for fully matching result
@@ -155,7 +154,7 @@ define(
 
 				it('can complete a string based on a regex', function () {
 					// Check for partially matching result
-					var biverseDFA = Automaton.regExpToBiverseDFA('(a|(bc))d(e|f)');
+					var biverseDFA = Compiler.regExpToBiverseDFA('(a|(bc))d(e|f)');
 					var traverser = new Traverser(biverseDFA);
 
 					chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([

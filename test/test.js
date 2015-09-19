@@ -12,8 +12,8 @@ define(
 	) {
 		'use strict';
 
-		var Automaton = whynotPremadeCompiler.Automaton;
-		var BiverseDFA = whynotPremadeCompiler.BiverseDFA;
+		var Compiler = whynotPremadeCompiler.Compiler;
+
 		var Traverser = whynotPremadePlayer.Traverser;
 
 		function createInput (array) {
@@ -33,7 +33,7 @@ define(
 
 			console.time('compilation');
 
-			var biverseDFA = Automaton.regExpToBiverseDFA(regexp);
+			var biverseDFA = Compiler.regExpToBiverseDFA(regexp);
 
 			console.timeEnd('compilation');
 
