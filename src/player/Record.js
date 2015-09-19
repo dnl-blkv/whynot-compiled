@@ -44,15 +44,15 @@ define(
 
 		Record.prototype.getPreviousRecord = function () {
 			return this.previousRecord;
-		}
+		};
 
 		Record.prototype.getCharacters = function () {
 			return this.characters;
-		}
+		};
 
 		Record.prototype.getAccepted = function () {
 			return this.accepted;
-		}
+		};
 
 		Record.prototype.getTargetState = function () {
 			return this.targetState;
@@ -64,6 +64,10 @@ define(
 
 		Record.prototype.getAcceptedCount = function () {
 			return this.acceptedCount;
+		};
+
+		Record.prototype.isHead = function () {
+			return this.previousRecord === null;
 		};
 
 		Record.prototype.hasLoops = function () {

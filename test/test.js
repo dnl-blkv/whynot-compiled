@@ -84,11 +84,7 @@ define(
 
 				var reverseResults = [];
 
-				while (currentRecord !== null) {
-
-					if(currentRecord.getPreviousRecord() === null) {
-						break;
-					}
+				while (!currentRecord.isHead()) {
 
 					var addPosition = currentRecord.getAcceptedCount() + currentRecord.getMissingCount() - 1;
 

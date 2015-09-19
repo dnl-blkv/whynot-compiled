@@ -4,13 +4,11 @@
 define(
 	[
 		'./util/arrayUtils',
-		'./BiverseDFA',
 		'regexParser',
 		'./Transition'
 	],
 	function(
 		arrayUtils,
-		BiverseDFA,
 		regexParser,
 		Transition
 	) {
@@ -35,6 +33,13 @@ define(
 			// Save the final state
 			this.finalStates = [];
 		}
+
+		/**
+		 * Constant describing a biverse DFA initial state.
+		 *
+		 * @type {number}
+		 */
+		Automaton.DFA_INITIAL_STATE = 0;
 
 		/**
 		 * Set initial states of an automaton.
@@ -740,8 +745,15 @@ define(
 				transitions.push(currentStateTransitions);
 			}
 
+			// Save the final states
+			var finalStates = minimalDFA.getFinalStates();
+
 			// Return the simple minimal notion of a given DFA
-			return new BiverseDFA(transitions, minimalDFA.getFinalStates());
+			return {
+				'initialState': Automaton.DFA_INITIAL_STATE,
+				'transitions': transitions,
+				'finalStates': finalStates
+			};
 		}
 
 		return Automaton;

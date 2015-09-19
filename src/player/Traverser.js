@@ -18,8 +18,17 @@ define(
 		 */
 		function Traverser (biverseDFA) {
 
-			// Define an automaton to execute
-			this.biverseDFA = biverseDFA;
+			// Define an initial state
+			this.initialState = biverseDFA.initialState;
+
+			// Define the conventional transitions table
+			this.transitions = biverseDFA.transitions;
+
+			// Define the reverse transitions table
+			this.reverseTransitions = createReverseTransitions(biverseDFA.transitions);
+
+			// Define the final states
+			this.finalStates = biverseDFA.finalStates;
 
 			// Define the input buffer
 			this.inputBuffer = [];
@@ -35,6 +44,43 @@ define(
 
 			// Define the tail records
 			this.tailRecords = [initialRecord];
+		}
+
+		/**
+		 * Create reverse transition table out of a given transition table.
+		 *
+		 * @param transitions
+		 * @returns {Array}
+		 */
+		function createReverseTransitions (transitions) {
+
+			var reverseTransitions = [];
+
+			var statesCount = transitions.length;
+
+			for (var stateNumber = 0; stateNumber < statesCount; stateNumber ++) {
+				reverseTransitions[stateNumber] = {};
+
+				var stateTransitionKeys = Object.keys(transitions[stateNumber]);
+
+				var stateTransitionKeysCount = stateTransitionKeys.length;
+
+				for (var stateTransitionKeyId = 0; stateTransitionKeyId < stateTransitionKeysCount; stateTransitionKeyId ++) {
+					var stateTransitionKey = stateTransitionKeys[stateTransitionKeyId];
+
+					var transition = transitions[stateNumber][stateTransitionKey];
+
+					var transitionString = transition + '';
+
+					if (reverseTransitions[stateNumber][transitionString] === undefined) {
+						reverseTransitions[stateNumber][transitionString] = [];
+					}
+
+					reverseTransitions[stateNumber][transitionString].push(stateTransitionKey);
+				}
+			}
+
+			return reverseTransitions;
 		}
 
 		/**
@@ -195,7 +241,7 @@ define(
 		 * @returns {boolean}
 		 */
 		function isStateFinal (traverser, state) {
-			return  traverser.biverseDFA.isStateFinal(state);
+			return (-1 < traverser.finalStates.indexOf(state));
 		}
 
 		/**
@@ -206,12 +252,10 @@ define(
 		 */
 		function createInitialRecord (traverser) {
 
-			var biverseDFA = traverser.biverseDFA;
-
 			// Return a new initial record
 			return new Record(
 				null,
-				biverseDFA.getInitialState(),
+				traverser.initialState,
 				[''],
 				false
 			);
@@ -293,7 +337,7 @@ define(
 		 * @returns {*}
 		 */
 		function getStateReverseTransitions (traverser, currentState) {
-			return traverser.biverseDFA.getStateReverseTransitions(currentState);
+			return traverser.reverseTransitions[currentState];
 		}
 
 		/**
@@ -332,7 +376,7 @@ define(
 		 * @returns {*}
 		 */
 		function getNextState (traverser, currentState, inputItem) {
-			return traverser.biverseDFA.getNextState(currentState, inputItem);
+			return traverser.transitions[currentState][inputItem];
 		}
 
 		/**

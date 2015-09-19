@@ -35,7 +35,7 @@ define(
 
 				// Iterate over the records chain
 				// Converting the list to the reverse array
-				while (currentRecord.getPreviousRecord() !== null) {
+				while (!currentRecord.isHead()) {
 
 					// Add each record to the array beginning
 					verticalChoicesArray.unshift(currentRecord.characters);
