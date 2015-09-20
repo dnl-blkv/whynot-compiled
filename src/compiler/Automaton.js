@@ -2,7 +2,7 @@
  * Created by danek_000 on 30.8.2015.
  */
 define(
-	[],
+	['./util/arrayUtils'],
 	function() {
 		'use strict';
 
@@ -45,7 +45,7 @@ define(
 		/**
 		 * Get copy of initial states of an automaton.
 		 *
-		 * @returns {Array.<T>}
+		 * @returns {Array.<Number>}
 		 */
 		Automaton.prototype.getInitialStates = function () {
 			return this.initialState.slice();
@@ -105,7 +105,7 @@ define(
 		/**
 		 * Get a copy of final states of an automaton.
 		 *
-		 * @returns {Array.<T>}
+		 * @returns {Array.<Number>}
 		 */
 		Automaton.prototype.getFinalStates = function () {
 			return this.finalStates.slice();

@@ -1,14 +1,17 @@
 define(
 	[
+		'regexParser',
 		'whynot-premade-compiler',
 		'whynot-premade-player'
 	],
 	function(
+		regexParser,
 		whynotPremadeCompiler,
 		whynotPremadePlayer
 		) {
 		'use strict';
 
+		var Automaton = whynotPremadeCompiler.Automaton;
 		var Compiler = whynotPremadeCompiler.Compiler;
 
 		var Traverser = whynotPremadePlayer.Traverser;
@@ -23,6 +26,77 @@ define(
 				return function() {
 					return array[i++] || null;
 				};
+			}
+
+			/**
+			 * Convert a given Abstract Syntax Tree made by the embedded regex parser to a NFA.
+			 *
+			 * @param ast
+			 * @returns {Automaton}
+			 */
+			function compile (ast) {
+
+				var nfa = new Automaton();
+
+				var currentNodeID, currentNodeNFA;
+
+				switch (ast[0]) {
+					case 'test':
+
+						// Generate a simple test NFA
+						nfa.setStatesCount(2);
+						nfa.setInitialStates([0]);
+						nfa.setFinalStates([1]);
+						nfa.addTransition(0, 1, ast[1]);
+
+						break;
+
+					case 'seq':
+
+						// Concat first two elements
+						nfa = Automaton.concat(compile(ast[1]), compile(ast[2]));
+
+						for (currentNodeID = 3; currentNodeID < ast.length; ++ currentNodeID) {
+							currentNodeNFA = compile(ast[currentNodeID]);
+
+							nfa = Automaton.concat(nfa, currentNodeNFA);
+						}
+
+						break;
+
+					case 'choice':
+
+						var choices = [];
+
+						for (currentNodeID = 1; currentNodeID < ast.length; ++ currentNodeID) {
+							currentNodeNFA = compile(ast[currentNodeID]);
+
+							choices.push(currentNodeNFA);
+						}
+
+						nfa = Automaton.choice(choices);
+
+						break;
+
+					case 'repetition':
+
+						var argumentNFA = compile(ast[1]);
+
+						nfa = Automaton.repetition(argumentNFA);
+
+						break;
+
+					default:
+						break;
+				}
+
+				return nfa;
+			}
+
+			function compileRegexTraverser (regex) {
+				var ast = regexParser.parse(regex);
+				var biverseDFA = Compiler.astToBiverseDFA(compile, ast);
+				return new Traverser(biverseDFA);
 			}
 
 			/**
@@ -189,8 +263,7 @@ define(
 			// + plain concatentaion
 			describe('regular expressions', function() {
 				it('can perform simple regex matching', function () {
-					var biverseDFA = Compiler.regExpToBiverseDFA('abc(d|e)f');
-					var traverser = new Traverser(biverseDFA);
+					var traverser = compileRegexTraverser('abc(d|e)f');
 
 					// Check for fully matching result
 					var fullMatchResult = traverser.execute(createInput('abcdf'));
@@ -201,8 +274,7 @@ define(
 
 				it('can complete a string based on a regex', function () {
 					// Check for partially matching result
-					var biverseDFA = Compiler.regExpToBiverseDFA('(a|(bc))d(e|f)');
-					var traverser = new Traverser(biverseDFA);
+					var traverser = compileRegexTraverser('(a|(bc))d(e|f)');
 
 					chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
 						[['a'], ['d'], ['e', 'f']]
@@ -225,17 +297,20 @@ define(
 					var regex = '(a|(bc))d(e|f)';
 
 					console.log('Regular Expression: ' + regex);
+
 					console.time('compilation');
 
-					var biverseDFA = Compiler.regExpToBiverseDFA(regex);
-					var traverser = new Traverser(biverseDFA);
+					var traverser = compileRegexTraverser(regex);
 
 					console.timeEnd('compilation');
 
 					var inputString = 'ad';
 
 					console.log('Input: ' + inputString)
-					console.log('Automaton (below):', biverseDFA);
+					console.log('Compiled DFA info (below):')
+					console.log('Initial state: ' + traverser.initialState);
+					console.log('Transitions:', traverser.transitions);
+					console.log('Final states: ', traverser.finalStates);
 					console.time('execution');
 
 					for (var i = 0; i < 99999; i ++) {

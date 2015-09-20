@@ -3,14 +3,10 @@
  */
 define(
 	[
-		'./Automaton',
-		'./util/arrayUtils',
-		'regexParser'
+		'./Automaton'
 	],
 	function(
-		Automaton,
-		arrayUtils,
-		regexParser
+		Automaton
 	) {
 		'use strict';
 
@@ -26,27 +22,26 @@ define(
 		/**
 		 * Convert a regular expression to a NFA.
 		 *
-		 * @param regularExpression
-		 * @returns {Automaton}
+		 * @param compile
+		 * @param ast
+		 * @returns {*}
 		 */
-		Compiler.regExpToNFA = function (regularExpression) {
-
-			// Create an AST for a given regular expression
-			var regularExpressionAST = regexParser.parse(regularExpression);
-
+		Compiler.astToNFA = function (compile, ast) {
 			// Return result of AST to NFA conversion
-			return astToNFA(regularExpressionAST);
+			return compile(ast);
 		};
 
 		/**
 		 * Convert a regular expression to a DFA.
-		 * @param regularExpression
+		 *
+		 * @param compile
+		 * @param ast
 		 * @returns {Automaton}
 		 */
-		Compiler.regExpToDFA = function (regularExpression) {
+		Compiler.astToDFA = function (compile, ast) {
 
 			// Create an NFA from a given regular expression
-			var nfa = Compiler.regExpToNFA(regularExpression);
+			var nfa = Compiler.astToNFA(compile, ast);
 
 			// Return determinized NFA
 			return Automaton.determinize(nfa);
@@ -55,11 +50,12 @@ define(
 		/**
 		 * Convert a regular expression to a minimal DFA.
 		 *
-		 * @param regularExpression
+		 * @param compile
+		 * @param ast
 		 * @returns {Automaton}
 		 */
-		Compiler.regExpToMinimalDFA = function (regularExpression) {
-			var dfa = Compiler.regExpToDFA(regularExpression);
+		Compiler.astToMinimalDFA = function (compile, ast) {
+			var dfa = Compiler.astToDFA(compile, ast);
 
 			return Automaton.minimize(dfa);
 		};
@@ -67,12 +63,13 @@ define(
 		/**
 		 * Convert a regular expression to a minimal DFA in a simple notion.
 		 *
-		 * @param regularExpression
-		 * @returns {*}
+		 * @param compile
+		 * @param ast
+		 * @returns {{initialState: number, transitions: Array, finalStates: Array.<Number>}}
 		 */
-		Compiler.regExpToBiverseDFA = function (regularExpression) {
+		Compiler.astToBiverseDFA = function (compile, ast) {
 
-			var minimalDFA = Compiler.regExpToMinimalDFA(regularExpression);
+			var minimalDFA = Compiler.astToMinimalDFA(compile, ast);
 
 			// Define a variable for the transitions
 			var transitions = [];
@@ -113,71 +110,6 @@ define(
 				'finalStates': finalStates
 			};
 		};
-
-		/**
-		 * Convert a given Abstract Syntax Tree made by the embedded regex parser to a NFA.
-		 *
-		 * @param ast
-		 * @returns {Automaton}
-		 */
-		function astToNFA (ast) {
-
-			var nfa = new Automaton();
-
-			var currentNodeID, currentNodeNFA;
-
-			switch (ast[0]) {
-				case 'test':
-
-					// Generate a simple test NFA
-					nfa.setStatesCount(2);
-					nfa.setInitialStates([0]);
-					nfa.setFinalStates([1]);
-					nfa.addTransition(0, 1, ast[1]);
-
-					break;
-
-				case 'seq':
-
-					// Concat first two elements
-					nfa = Automaton.concat(astToNFA(ast[1]), astToNFA(ast[2]));
-
-					for (currentNodeID = 3; currentNodeID < ast.length; ++ currentNodeID) {
-						currentNodeNFA = astToNFA(ast[currentNodeID]);
-
-						nfa = Automaton.concat(nfa, currentNodeNFA);
-					}
-
-					break;
-
-				case 'choice':
-
-					var choices = [];
-
-					for (currentNodeID = 1; currentNodeID < ast.length; ++ currentNodeID) {
-						currentNodeNFA = astToNFA(ast[currentNodeID]);
-
-						choices.push(currentNodeNFA);
-					}
-
-					nfa = Automaton.choice(choices);
-
-					break;
-
-				case 'repetition':
-
-					var argumentNFA = astToNFA(ast[1]);
-
-					nfa = Automaton.repetition(argumentNFA);
-
-					break;
-
-				default:
-					break;
-			}
-
-			return nfa;
-		}
 
 		return Compiler;
 	}

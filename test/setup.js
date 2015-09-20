@@ -3,7 +3,7 @@ require.config({
 	"baseUrl": "/test",
 
 	"paths": {
-		"regexParser": "../src/compiler/util/regexParser"
+		"regexParser": "util/regexParser"
 	},
 
 	"packages": [

@@ -8,14 +8,17 @@
  */
 define(
 	[
+		'./Automaton',
 		'./Compiler'
 	],
 	function(
+		Automaton,
 		Compiler
 	) {
 		'use strict';
 
 		return {
+			Automaton: Automaton,
 			Compiler: Compiler
 		};
 	}
