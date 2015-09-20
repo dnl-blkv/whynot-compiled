@@ -25,6 +25,53 @@ define(
 				};
 			}
 
+			/**
+			 * Prints the results of an automaton execution.
+			 *
+			 * @param results
+			 */
+			function printResults (results) {
+				var resultsCount = results.length;
+
+				console.log("\nResults are below.");
+				console.log("==================");
+
+				for (var resultId = 0; resultId < resultsCount; resultId ++) {
+
+					console.log("Result #" + resultId + ":");
+
+					var currentRecord = results[resultId];
+
+					console.log("Accepted: " + currentRecord.getAcceptedCount());
+
+					console.log("Missing: " + currentRecord.getMissingCount());
+
+					var reverseResults = [];
+
+					while (!currentRecord.isHead()) {
+
+						var addPosition = currentRecord.getAcceptedCount() + currentRecord.getMissingCount() - 1;
+
+						reverseResults.unshift([currentRecord.getAccepted(), currentRecord.getCharacters(), addPosition]);
+
+						currentRecord = currentRecord.getPreviousRecord();
+					}
+
+					var reverseResultsCount = reverseResults.length;
+
+					for (var reverseResultId = 0; reverseResultId < reverseResultsCount; reverseResultId ++) {
+						var charStatus = reverseResults[reverseResultId][0] ? "Accepted" : "Missing";
+
+						var missingPosition = !reverseResults[reverseResultId][0] ?
+						" to be added at position " + reverseResults[reverseResultId][2] : "";
+
+						console.log(charStatus, reverseResults[reverseResultId][1], missingPosition);
+					}
+
+					console.log("");
+				}
+			}
+
 			// Convert records chain to an array of vertical choices
 			function recordsChainToVerticalChoicesArray (chainTail) {
 
@@ -171,6 +218,35 @@ define(
 					]);
 
 					chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
+				});
+
+				it('can run faster than wind', function() {
+
+					var regex = '(a|(bc))d(e|f)';
+
+					console.log('Regular Expression: ' + regex);
+					console.time('compilation');
+
+					var biverseDFA = Compiler.regExpToBiverseDFA(regex);
+					var traverser = new Traverser(biverseDFA);
+
+					console.timeEnd('compilation');
+
+					var inputString = 'ad';
+
+					console.log('Input: ' + inputString)
+					console.log('Automaton (below):', biverseDFA);
+					console.time('execution');
+
+					for (var i = 0; i < 99999; i ++) {
+						traverser.execute(createInput(inputString));
+					}
+
+					console.timeEnd('execution');
+
+					var result = traverser.execute(createInput(inputString));
+
+					printResults(result);
 				});
 			});
 		});
