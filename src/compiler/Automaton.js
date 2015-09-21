@@ -27,11 +27,22 @@ define(
 		}
 
 		/**
-		 * Constant describing a biverse DFA initial state.
+		 * Set amount of states in an automaton.
 		 *
-		 * @type {number}
+		 * @param statesCount
 		 */
-		Automaton.DFA_INITIAL_STATE = 0;
+		Automaton.prototype.setStatesCount = function (statesCount) {
+			this.statesCount = statesCount;
+		};
+
+		/**
+		 * Get amount of states in an automaton.
+		 *
+		 * @returns {Number}
+		 */
+		Automaton.prototype.getStatesCount = function () {
+			return this.statesCount;
+		};
 
 		/**
 		 * Set initial states of an automaton.
@@ -52,34 +63,7 @@ define(
 		};
 
 		/**
-		 * Get amount of states in an automaton.
-		 *
-		 * @returns {Number}
-		 */
-		Automaton.prototype.getStatesCount = function () {
-			return this.statesCount;
-		};
-
-		/**
-		 * Get amount of transitions in an automaton.
-		 *
-		 * @returns {Number}
-		 */
-		Automaton.prototype.getTransitionsCount = function () {
-			return this.transitions.length;
-		};
-
-		/**
-		 * Set amount of states in an automaton.
-		 *
-		 * @param statesCount
-		 */
-		Automaton.prototype.setStatesCount = function (statesCount) {
-			this.statesCount = statesCount;
-		};
-
-		/**
-		 *
+		 * Add a transition to the automaton's transition table.
 		 *
 		 * @param stateFrom
 		 * @param stateTo
@@ -91,6 +75,15 @@ define(
 				'stateTo': stateTo,
 				'character': character
 			});
+		};
+
+		/**
+		 * Get amount of transitions in an automaton.
+		 *
+		 * @returns {Number}
+		 */
+		Automaton.prototype.getTransitionsCount = function () {
+			return this.transitions.length;
 		};
 
 		/**
@@ -110,6 +103,13 @@ define(
 		Automaton.prototype.getFinalStates = function () {
 			return this.finalStates.slice();
 		};
+
+		/**
+		 * Constant describing a biverse DFA initial state.
+		 *
+		 * @type {number}
+		 */
+		Automaton.DFA_INITIAL_STATE = 0;
 
 		/**
 		 * Concatenate two automata.

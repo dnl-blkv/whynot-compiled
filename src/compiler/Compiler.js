@@ -9,10 +9,10 @@ define(
 		Automaton
 	) {
 		'use strict';
-		
+
 		return {
 			/**
-			 * Convert a regular expression to a minimal DFA in a simple notion.
+			 * Compile a simple minimal dfa from a given AST using a custom compile function.
 			 *
 			 * @param compile
 			 * @param ast
