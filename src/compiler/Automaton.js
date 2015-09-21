@@ -27,6 +27,13 @@ define(
 		}
 
 		/**
+		 * Constant describing biverse DFA initial states.
+		 *
+		 * @type {number}
+		 */
+		Automaton.DFA_INITIAL_STATE = 0;
+
+		/**
 		 * Set amount of states in an automaton.
 		 *
 		 * @param statesCount
@@ -103,13 +110,6 @@ define(
 		Automaton.prototype.getFinalStates = function () {
 			return this.finalStates.slice();
 		};
-
-		/**
-		 * Constant describing a biverse DFA initial state.
-		 *
-		 * @type {number}
-		 */
-		Automaton.DFA_INITIAL_STATE = 0;
 
 		/**
 		 * Concatenate two automata.
@@ -429,7 +429,7 @@ define(
 			}
 
 			// Set the initial states
-			determinizedNFA.setInitialStates([0]);
+			determinizedNFA.setInitialStates([Automaton.DFA_INITIAL_STATE]);
 
 			// Set the final states
 			determinizedNFA.setFinalStates(newFinalStates);
