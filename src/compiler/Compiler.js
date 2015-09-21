@@ -9,108 +9,63 @@ define(
 		Automaton
 	) {
 		'use strict';
+		
+		return {
+			/**
+			 * Convert a regular expression to a minimal DFA in a simple notion.
+			 *
+			 * @param compile
+			 * @param ast
+			 * @returns {{initialState: number, transitions: Array, finalStates: Array.<Number>}}
+			 */
 
-		/**
-		 * Describes an AST to Automata compiler.
-		 *
-		 * @constructor
-		 */
-		function Compiler () {
+			compileBiverseDFA: function (compile, ast) {
 
-		}
+				// Get an NFA from a given AST using given compile function
+				var nfa = compile(ast);
 
-		/**
-		 * Convert a regular expression to a NFA.
-		 *
-		 * @param compile
-		 * @param ast
-		 * @returns {*}
-		 */
-		Compiler.astToNFA = function (compile, ast) {
-			// Return result of AST to NFA conversion
-			return compile(ast);
-		};
+				// Minimize the NFA
+				var minimalDFA = Automaton.minimize(nfa);
 
-		/**
-		 * Convert a regular expression to a DFA.
-		 *
-		 * @param compile
-		 * @param ast
-		 * @returns {Automaton}
-		 */
-		Compiler.astToDFA = function (compile, ast) {
+				// Define a variable for the transitions
+				var transitions = [];
 
-			// Create an NFA from a given regular expression
-			var nfa = Compiler.astToNFA(compile, ast);
+				// Save the DFA states for reference
+				var statesCount = minimalDFA.getStatesCount();
 
-			// Return determinized NFA
-			return Automaton.determinize(nfa);
-		};
+				// Loop over states
+				for (var currentStateID = 0; currentStateID < statesCount; ++ currentStateID) {
 
-		/**
-		 * Convert a regular expression to a minimal DFA.
-		 *
-		 * @param compile
-		 * @param ast
-		 * @returns {Automaton}
-		 */
-		Compiler.astToMinimalDFA = function (compile, ast) {
-			var dfa = Compiler.astToDFA(compile, ast);
+					// Initialize object for storing current state transitions
+					var currentStateTransitions = {};
 
-			return Automaton.minimize(dfa);
-		};
+					// Find all the transitions for current state
+					for (var currentTransitionID = 0; currentTransitionID < minimalDFA.transitions.length; ++ currentTransitionID) {
 
-		/**
-		 * Convert a regular expression to a minimal DFA in a simple notion.
-		 *
-		 * @param compile
-		 * @param ast
-		 * @returns {{initialState: number, transitions: Array, finalStates: Array.<Number>}}
-		 */
-		Compiler.astToBiverseDFA = function (compile, ast) {
+						// Save current transition for reference
+						var currentTransition = minimalDFA.transitions[currentTransitionID];
 
-			var minimalDFA = Compiler.astToMinimalDFA(compile, ast);
-
-			// Define a variable for the transitions
-			var transitions = [];
-
-			// Save the DFA states for reference
-			var statesCount = minimalDFA.getStatesCount();
-
-			// Loop over states
-			for (var currentStateID = 0; currentStateID < statesCount; ++ currentStateID) {
-
-				// Initialize object for storing current state transitions
-				var currentStateTransitions = {};
-
-				// Find all the transitions for current state
-				for (var currentTransitionID = 0; currentTransitionID < minimalDFA.transitions.length; ++ currentTransitionID) {
-
-					// Save current transition for reference
-					var currentTransition = minimalDFA.transitions[currentTransitionID];
-
-					// If current transition is from current state
-					if (currentTransition.stateFrom === currentStateID) {
-						// Save the transition in the right place
-						currentStateTransitions[currentTransition.character] = currentTransition.stateTo;
+						// If current transition is from current state
+						if (currentTransition.stateFrom === currentStateID) {
+							// Save the transition in the right place
+							currentStateTransitions[currentTransition.character] = currentTransition.stateTo;
+						}
 					}
+
+					// Add the newly made transitions
+					transitions.push(currentStateTransitions);
 				}
 
-				// Add the newly made transitions
-				transitions.push(currentStateTransitions);
+				// Save the final states
+				var finalStates = minimalDFA.getFinalStates();
+
+				// Return the simple minimal notion of a given DFA
+				return {
+					'initialState': Automaton.DFA_INITIAL_STATE,
+					'transitions': transitions,
+					'finalStates': finalStates
+				};
 			}
-
-			// Save the final states
-			var finalStates = minimalDFA.getFinalStates();
-
-			// Return the simple minimal notion of a given DFA
-			return {
-				'initialState': Automaton.DFA_INITIAL_STATE,
-				'transitions': transitions,
-				'finalStates': finalStates
-			};
 		};
-
-		return Compiler;
 	}
 );

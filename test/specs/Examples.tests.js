@@ -95,7 +95,7 @@ define(
 
 			function compileRegexTraverser (regex) {
 				var ast = regexParser.parse(regex);
-				var biverseDFA = Compiler.astToBiverseDFA(compile, ast);
+				var biverseDFA = Compiler.compileBiverseDFA(compile, ast);
 				return new Traverser(biverseDFA);
 			}
 

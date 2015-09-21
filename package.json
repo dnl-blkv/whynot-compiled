@@ -1,6 +1,6 @@
 {
-  "name": "whynot-premade-player",
-  "version": "0.2.3",
+  "name": "whynot-premade",
+  "version": "0.3.1",
   "description": "Pre-made DFA compilation and Whynot.js-style execution system.",
   "keywords": [
     "Language",
