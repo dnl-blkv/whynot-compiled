@@ -12,7 +12,7 @@ define(
 		'use strict';
 
 		var Automaton = whynotPremadeCompiler.Automaton;
-		var Compiler = whynotPremadeCompiler.Compiler;
+		var compileSimpleDFA = whynotPremadeCompiler.compileSimpleDFA;
 
 		var Traverser = whynotPremadePlayer.Traverser;
 
@@ -95,8 +95,8 @@ define(
 
 			function compileRegexTraverser (regex) {
 				var ast = regexParser.parse(regex);
-				var biverseDFA = Compiler.compileBiverseDFA(compile, ast);
-				return new Traverser(biverseDFA);
+				var simpleDFA = compileSimpleDFA(compile, ast);
+				return new Traverser(simpleDFA);
 			}
 
 			/**

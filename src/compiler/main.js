@@ -8,18 +8,31 @@
  */
 define(
 	[
-		'./Automaton',
-		'./Compiler'
+		'./Automaton'
 	],
 	function(
-		Automaton,
-		Compiler
+		Automaton
 	) {
 		'use strict';
 
 		return {
 			Automaton: Automaton,
-			Compiler: Compiler
+
+			/**
+			 * Compile a simple minimal dfa from a given AST using a custom compile function.
+			 *
+			 * @param compile
+			 * @param ast
+			 * @returns {{initialState: number, transitions: Array, finalStates: Array.<Number>}}
+			 */
+			compileSimpleDFA: function (compile, ast) {
+
+				// Get an NFA from a given AST using given compile function
+				var nfa = compile(ast);
+
+				// Return a simplified
+				return Automaton.toSimpleDFA(nfa);
+			}
 		};
 	}
 );
