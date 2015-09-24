@@ -257,7 +257,7 @@ define(
 				null,
 				traverser.initialState,
 				[''],
-				false
+				true
 			);
 		}
 
@@ -474,11 +474,34 @@ define(
 
 						// Add a new accept record for the accepted transition
 
-						// Create a new accept record
-						var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
+						// Only if not finishing an extra expansion
+						var uselessExtension = false;
 
-						// Add the new accept record to the tail derivatives
-						tailDerivatives.push(newAcceptRecord);
+						// If currently processed record is failing
+						if (!tailRecord.getAccepted()) {
+
+							// Save last accept record for reference
+							var lastAcceptRecord = tailRecord.getLastAcceptRecord();
+
+							// If there was at least one accept record earlier
+							if (lastAcceptRecord !== null) {
+
+								// Calculate the possible shortcut state
+								var shortcutState = getNextState(traverser, lastAcceptRecord.getTargetState(), nextInputItem);
+
+								uselessExtension = (shortcutState === nextState);
+							}
+						}
+
+						// If the new record would finish a useful extension
+						if (!uselessExtension) {
+
+							// Create a new accept record
+							var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
+
+							// Add the new accept record to the tail derivatives
+							tailDerivatives.push(newAcceptRecord);
+						}
 
 						// Add a new missing record for a missing characters from accepted reverse transition
 

@@ -26,6 +26,9 @@ define(
 			// Define accepted characters counter
 			this.acceptedCount = 0;
 
+			// Define the last accepted counter
+			this.lastAcceptedRecord = null;
+
 			// If the previous record is defined
 			if (this.previousRecord !== null) {
 
@@ -36,7 +39,16 @@ define(
 				this.acceptedCount = this.previousRecord.getAcceptedCount();
 
 				// Increase the corresponding counter
-				this.accepted ? ++ this.acceptedCount: ++ this.missingCount;
+				if (this.accepted) {
+					++ this.acceptedCount;
+					this.lastAcceptedRecord = this;
+				} else {
+					++ this.missingCount;
+					this.lastAcceptedRecord = this.previousRecord.lastAcceptedRecord;
+				}
+
+			} else {
+				this.lastAcceptedRecord = this;
 			}
 
 			// TODO: implement loop detection
@@ -44,6 +56,10 @@ define(
 
 		Record.prototype.getPreviousRecord = function () {
 			return this.previousRecord;
+		};
+
+		Record.prototype.getLastAcceptRecord = function () {
+			return this.lastAcceptedRecord;
 		};
 
 		Record.prototype.getCharacters = function () {
@@ -82,7 +98,7 @@ define(
 			var earlierRecord = this.getPreviousRecord();
 
 			// If earlier record exists
-			if(!this.getAccepted()) {
+			if (!this.getAccepted()) {
 				while (earlierRecord !== null) {
 					var earlierState = earlierRecord.getTargetState();
 
@@ -103,7 +119,7 @@ define(
 
 			// Return the flag determining the loops presence
 			return hasLoops;
-		}
+		};
 
 		return Record;
 	}

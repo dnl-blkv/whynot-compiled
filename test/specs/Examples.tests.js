@@ -223,6 +223,8 @@ define(
 
 				var flatResults = [];
 
+				var stringFlatResults = [];
+
 				for (var resultId = 0; resultId < resultsCount; ++ resultId) {
 
 					var currentRecord = results[resultId];
@@ -234,7 +236,11 @@ define(
 					flatResults = flatResults.concat(currentRecordFlatChoices);
 				}
 
-				return flatResults;
+				for (var flatResultId = 0; flatResultId < flatResults.length; ++ flatResultId) {
+					stringFlatResults.push(flatResults[flatResultId].join(''));
+				}
+
+				return stringFlatResults;
 			}
 
 			function processResults (results) {
@@ -292,6 +298,19 @@ define(
 					chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
 				});
 
+				it('can complete a string based on a regex with kleene-star', function () {
+					// Check for partially matching result
+					var traverser = compileRegexTraverser('((a*b)*(b*c)(cd*)*)*');
+
+					console.log(traverser.initialState, traverser.transitions, traverser.finalStates);
+
+					var results;
+
+					results = traverser.execute(createInput('abc'));
+					console.log(flattenResults(results));
+					//printResults(results);
+				});
+
 				it('can run faster than wind', function() {
 
 					var regex = '(a|(bc))d(e|f)';
@@ -306,14 +325,14 @@ define(
 
 					var inputString = 'ad';
 
-					console.log('Input: ' + inputString)
-					console.log('Compiled DFA info (below):')
+					console.log('Input: ' + inputString);
+					console.log('Compiled DFA info (below):');
 					console.log('Initial state: ' + traverser.initialState);
 					console.log('Transitions:', traverser.transitions);
 					console.log('Final states: ', traverser.finalStates);
 					console.time('execution');
 
-					for (var i = 0; i < 99999; i ++) {
+					for (var i = 0; i < 100000; i ++) {
 						traverser.execute(createInput(inputString));
 					}
 
