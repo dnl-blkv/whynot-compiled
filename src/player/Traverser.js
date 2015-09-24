@@ -252,7 +252,13 @@ define(
 		 */
 		function createInitialRecord (traverser) {
 
-			// Return a new initial record
+			/*
+				Initial record has null as its previous state declaring the recording beginning.
+				At the same time, its target state is set to initial state. That is what we draw in graphs as '-->(0)'.
+				It has an empty transition on it, since it doesn't have to consume any input.
+				Finally, its accepting flag is set to 'true'. It is an important factor, as initial record
+				takes part in cutting off the useless extensions when those are discovered at the very beginning of the input.
+			 */
 			return new Record(
 				null,
 				traverser.initialState,
