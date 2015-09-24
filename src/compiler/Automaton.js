@@ -506,22 +506,33 @@ define(
 			// Save transitions count for reference
 			var transitionsCount = nfa.getTransitionsCount();
 
-			// Iterate over transitions
-			for (var transitionID = 0; transitionID < transitionsCount; ++ transitionID) {
+			// Save current state
+			var currentStateID = 0;
 
-				// Save current transition reference
-				var currentTransition = nfa.transitions[transitionID];
+			while (currentStateID < eclosure.length) {
 
-				// If current transition leads to a directly connected states
-				if ((currentTransition.stateFrom === state) && (currentTransition.character === '')
-					&& (currentTransition.stateTo !== state)) {
+				var currentState = eclosure[currentStateID];
 
-					// Save eclose of the state
-					var epsilonConnectedStateEclosure = eclose(nfa, currentTransition.stateTo);
+				// Iterate over transitions
+				for (var transitionID = 0; transitionID < transitionsCount; ++ transitionID) {
 
-					// Add its eclosure to the requested state eclosure
-					eclosure = eclosure.concat(epsilonConnectedStateEclosure);
+					// Save current transition reference
+					var currentTransition = nfa.transitions[transitionID];
+
+					// If current transition leads to a directly connected states
+					if ((currentTransition.stateFrom === currentState) && (currentTransition.character === '')
+						&& (currentTransition.stateTo !== currentState)) {
+
+						var nextEclosureState = currentTransition.stateTo;
+
+						// Add current state to the epsilon-closure
+						if (eclosure.indexOf(nextEclosureState) === -1) {
+							eclosure.push(nextEclosureState);
+						}
+					}
 				}
+
+				++ currentStateID;
 			}
 
 			// Return eclosure of a given state of the NFA

@@ -298,6 +298,16 @@ define(
 					chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
 				});
 
+				it('can complete a string based on a regex with star-height of 1', function() {
+					var traverser = compileRegexTraverser('x(((a|b)*)|((c|d)*)|((g|h)*))*y');
+
+					var results = traverser.execute(createInput('xachy'));
+
+					console.log(traverser.initialState, traverser.transitions, traverser.finalStates);
+
+					console.log(flattenResults(results));
+				});
+
 				it('can complete a string based on a regex with kleene-star', function () {
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('((a*b)*(b*c)(cd*)*)*');
