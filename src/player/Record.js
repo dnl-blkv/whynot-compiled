@@ -27,7 +27,7 @@ define(
 			this.acceptedCount = 0;
 
 			// Define the last accepted counter
-			this.lastAcceptedRecord = null;
+			this.lastAcceptedRecord = this;
 
 			// If the previous record is defined
 			if (this.previousRecord !== null) {
@@ -41,14 +41,11 @@ define(
 				// Increase the corresponding counter
 				if (this.accepted) {
 					++ this.acceptedCount;
-					this.lastAcceptedRecord = this;
 				} else {
 					++ this.missingCount;
 					this.lastAcceptedRecord = this.previousRecord.lastAcceptedRecord;
 				}
 
-			} else {
-				this.lastAcceptedRecord = this;
 			}
 
 			// TODO: implement loop detection

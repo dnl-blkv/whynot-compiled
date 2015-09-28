@@ -299,26 +299,27 @@ define(
 				});
 
 				it('can complete a string based on a regex with star-height of 1', function() {
-					var traverser = compileRegexTraverser('x(((a|b)*)|((c|d)*)|((g|h)*))*y');
+					var traverser = compileRegexTraverser('(c|a|b)*ab');
 
-					var results = traverser.execute(createInput('xachy'));
+					var results = traverser.execute(createInput('abab'));
 
-					console.log(traverser.initialState, traverser.transitions, traverser.finalStates);
-
-					console.log(flattenResults(results));
+					chai.expect(flattenResults(results)).to.deep.equal(['abab']);
 				});
 
 				it('can complete a string based on a regex with kleene-star', function () {
 					// Check for partially matching result
-					var traverser = compileRegexTraverser('((a*b)*(b*c)(cd*)*)*');
+					var traverser = compileRegexTraverser('(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
 
-					console.log(traverser.initialState, traverser.transitions, traverser.finalStates);
+					console.time('kleene-exec');
+					for (var i = 0; i < 10000; ++ i) {
+						traverser.execute(createInput('abcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
+					}
+					console.timeEnd('kleene-exec');
 
-					var results;
+					var results = traverser.execute(createInput('abcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
 
-					results = traverser.execute(createInput('abc'));
 					console.log(flattenResults(results));
-					//printResults(results);
+					//chai.expect(flattenResults(results)).to.deep.equal(['abccdddbbccdc']);
 				});
 
 				it('can run faster than wind', function() {

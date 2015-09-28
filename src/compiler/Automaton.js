@@ -523,6 +523,7 @@ define(
 					if ((currentTransition.stateFrom === currentState) && (currentTransition.character === '')
 						&& (currentTransition.stateTo !== currentState)) {
 
+						// Save next eclosure state for reference
 						var nextEclosureState = currentTransition.stateTo;
 
 						// Add current state to the epsilon-closure
