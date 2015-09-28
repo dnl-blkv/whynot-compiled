@@ -25,8 +25,8 @@ define(
 			// Define the conventional transitions table
 			this.transitions = biverseDFA.transitions;
 
-			// Define the reverse transitions table
-			this.reverseTransitions = createReverseTransitions(biverseDFA.transitions);
+			// Define the transported transitions table
+			this.transportedTransitions = transportTransitions(biverseDFA.transitions);
 
 			// Define the final states
 			this.finalStates = biverseDFA.finalStates;
@@ -42,19 +42,19 @@ define(
 		}
 
 		/**
-		 * Create reverse transition table out of a given transition table.
+		 * Create transported transition table out of a given transition table.
 		 *
 		 * @param transitions
 		 * @returns {Array}
 		 */
-		function createReverseTransitions (transitions) {
+		function transportTransitions (transitions) {
 
-			var reverseTransitions = [];
+			var transportedTransitions = [];
 
 			var statesCount = transitions.length;
 
 			for (var stateNumber = 0; stateNumber < statesCount; stateNumber ++) {
-				reverseTransitions[stateNumber] = {};
+				transportedTransitions[stateNumber] = {};
 
 				var stateTransitionKeys = Object.keys(transitions[stateNumber]);
 
@@ -67,15 +67,15 @@ define(
 
 					var transitionString = transition + '';
 
-					if (reverseTransitions[stateNumber][transitionString] === undefined) {
-						reverseTransitions[stateNumber][transitionString] = [];
+					if (transportedTransitions[stateNumber][transitionString] === undefined) {
+						transportedTransitions[stateNumber][transitionString] = [];
 					}
 
-					reverseTransitions[stateNumber][transitionString].push(stateTransitionKey);
+					transportedTransitions[stateNumber][transitionString].push(stateTransitionKey);
 				}
 			}
 
-			return reverseTransitions;
+			return transportedTransitions;
 		}
 
 		/**
@@ -292,7 +292,7 @@ define(
 		 */
 		function createPartiallyMissingRecord (previousRecord, characters, excludedCharacter, targetState) {
 
-			// Save the next state index in the current reverse transition
+			// Save the next state index in the current transported transition
 			var excludedCharacterIndex = characters.indexOf(excludedCharacter);
 
 			// Create array of accepted characters
@@ -311,14 +311,14 @@ define(
 		}
 
 		/**
-		 * Get reverse transitions for a state.
+		 * Get transported transitions for a state.
 		 *
 		 * @param traverser
 		 * @param currentState
 		 * @returns {*}
 		 */
-		function getStateReverseTransitions (traverser, currentState) {
-			return traverser.reverseTransitions[currentState];
+		function getStateTransportedTransitions (traverser, currentState) {
+			return traverser.transportedTransitions[currentState];
 		}
 
 		/**
@@ -430,7 +430,7 @@ define(
 				candidateRecord = candidateRecord.getPreviousRecord();
 			}
 
-			if (candidateRecordFound){
+			if (candidateRecordFound) {
 				// Perform check going back from the checked record and similarly back from candidateRecord
 				// A forced skip in candidate record means the extension is not useless
 				var currentCandidateParent = candidateRecord;
@@ -535,8 +535,8 @@ define(
 					// Get the next state for the record
 					var nextState = getNextState(traverser, currentState, nextInputItem);
 
-					// Save reverse transitions for current state
-					var currentStateReverseTransitions = getStateReverseTransitions(traverser, currentState);
+					// Save transported transitions for current state
+					var currentStateTransportedTransitions = getStateTransportedTransitions(traverser, currentState);
 
 					// Save the next state as a string index
 					var nextStateAsString = nextState + '';
@@ -575,17 +575,17 @@ define(
 							tailDerivatives.push(newAcceptRecord);
 						}
 
-						// Add a new missing record for a missing characters from accepted reverse transition
+						// Add a new missing record for a missing characters from accepted transported transition
 
-						// Save the reverse transition to which current input item belongs
-						var reverseTransition = currentStateReverseTransitions[nextStateAsString];
+						// Save the transported transition to which current input item belongs
+						var transportedTransition = currentStateTransportedTransitions[nextStateAsString];
 
 						// If there are other possibilities to get to a required state except for the saved one
-						if (reverseTransition.length > 1) {
+						if (transportedTransition.length > 1) {
 
-							// Create accepted record for reverse transition except for the accepted transition
+							// Create accepted record for transported transition except for the accepted transition
 							var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord,
-								reverseTransition, nextInputItem, nextState);
+								transportedTransition, nextInputItem, nextState);
 
 							// Add the new partially accepted record to the tail derivatives
 							tailDerivatives.push(newPartiallyMissingRecord);
@@ -595,29 +595,29 @@ define(
 
 					// Add the new accepted records for all the accepted transitions
 
-					// Save reverse transition keys
-					var reverseTransitionsKeys = Object.keys(currentStateReverseTransitions);
+					// Save transported transition keys
+					var transportedTransitionsKeys = Object.keys(currentStateTransportedTransitions);
 
-					// Save reverse transitions amount
-					var reverseTransitionsCount = reverseTransitionsKeys.length;
+					// Save transported transitions amount
+					var transportedTransitionsCount = transportedTransitionsKeys.length;
 
-					// Iterate over reverse transitions
-					for (var j = 0; j < reverseTransitionsCount; j++) {
+					// Iterate over transported transitions
+					for (var j = 0; j < transportedTransitionsCount; j++) {
 
-						// Save current reverse transition key
-						var currentReverseTransitionKey = reverseTransitionsKeys[j];
+						// Save current transported transition key
+						var currentTransportedTransitionKey = transportedTransitionsKeys[j];
 
-						// If we are not dealing with a previously processed reverse transition
-						if (currentReverseTransitionKey !== nextStateAsString) {
+						// If we are not dealing with a previously processed transported transition
+						if (currentTransportedTransitionKey !== nextStateAsString) {
 
-							// Save reference to the current reverse transition
-							var currentReverseTransition = currentStateReverseTransitions[currentReverseTransitionKey];
+							// Save reference to the current transported transition
+							var currentTransportedTransition = currentStateTransportedTransitions[currentTransportedTransitionKey];
 
-							// Save the current reverse transition state
-							var currentReverseTransitionState = parseInt(currentReverseTransitionKey);
+							// Save the current transported transition state
+							var currentTransportedTransitionState = parseInt(currentTransportedTransitionKey);
 
-							// Create accepted record for reverse transition
-							var nextMissingRecord = createMissingRecord(tailRecord, currentReverseTransition, currentReverseTransitionState);
+							// Create accepted record for transported transition
+							var nextMissingRecord = createMissingRecord(tailRecord, currentTransportedTransition, currentTransportedTransitionState);
 
 							// Add the next accepted record to the tail derivatives
 							tailDerivatives.push(nextMissingRecord);

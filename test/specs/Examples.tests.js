@@ -308,15 +308,15 @@ define(
 
 				it('can complete a string based on a regex with kleene-star', function () {
 					// Check for partially matching result
-					var traverser = compileRegexTraverser('(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
+					var traverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
 
 					console.time('kleene-exec');
-					for (var i = 0; i < 10000; ++ i) {
-						traverser.execute(createInput('abcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
+					for (var i = 0; i < 100; ++ i) {
+						traverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
 					}
 					console.timeEnd('kleene-exec');
 
-					var results = traverser.execute(createInput('abcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
+					var results = traverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
 
 					console.log(flattenResults(results));
 					//chai.expect(flattenResults(results)).to.deep.equal(['abccdddbbccdc']);
