@@ -2,7 +2,7 @@
  * Created by danek_000 on 30.8.2015.
  */
 define(
-	[],
+	['./util/arrayUtils'],
 	function() {
 		'use strict';
 
@@ -63,6 +63,10 @@ define(
 			return this.characters;
 		};
 
+		Record.prototype.charactersEqual = function (anotherRecord) {
+			return this.getCharacters().equals(anotherRecord.getCharacters());
+		};
+
 		Record.prototype.getAccepted = function () {
 			return this.accepted;
 		};
@@ -77,6 +81,10 @@ define(
 
 		Record.prototype.getAcceptedCount = function () {
 			return this.acceptedCount;
+		};
+
+		Record.prototype.getTotalCount = function () {
+			return this.getAcceptedCount() + this.getMissingCount();
 		};
 
 		Record.prototype.isHead = function () {

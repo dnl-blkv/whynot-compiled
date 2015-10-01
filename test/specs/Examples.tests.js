@@ -282,18 +282,26 @@ define(
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('(a|(bc))d(e|f)');
 
+					console.log(flattenResults(traverser.execute(createInput('ad'))));
+
 					chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
 						[['a'], ['d'], ['e', 'f']]
 					]);
+
+					console.log(flattenResults(traverser.execute(createInput('bf'))));
 
 					chai.expect(processResults(traverser.execute(createInput('bf')))).to.deep.equal([
 						[['b'], ['c'], ['d'], ['f']]
 					]);
 
+					console.log(flattenResults(traverser.execute(createInput('d'))));
+
 					chai.expect(processResults(traverser.execute(createInput('d')))).to.deep.equal([
 						[['a'], ['d'], ['e', 'f']],
 						[['b'], ['c'], ['d'], ['e', 'f']]
 					]);
+
+					console.log(flattenResults(traverser.execute(createInput('abc'))));
 
 					chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
 				});
@@ -310,14 +318,9 @@ define(
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
 
-					console.time('kleene-exec');
-					for (var i = 0; i < 100; ++ i) {
-						traverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
-					}
-					console.timeEnd('kleene-exec');
-
 					var results = traverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
 
+					console.log('Regex: (a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
 					console.log(flattenResults(results));
 					//chai.expect(flattenResults(results)).to.deep.equal(['abccdddbbccdc']);
 				});
@@ -352,6 +355,14 @@ define(
 					var result = traverser.execute(createInput(inputString));
 
 					printResults(result);
+
+					var kleeneTraverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
+
+					console.time('kleene-exec');
+					for (var j = 0; j < 1000; ++ j) {
+						kleeneTraverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
+					}
+					console.timeEnd('kleene-exec');
 				});
 			});
 		});

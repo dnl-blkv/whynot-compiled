@@ -410,60 +410,69 @@ define(
 			traverser.finalRecords.push(record);
 		}
 
-		function uselesslyExtends(olderRecord, newerRecord) {
+		function uselesslyExtends (newerRecord, olderRecord) {
 			var uselesslyExtends = false;
 
-			// Find older record equal state
+			// Find candidate record
 			var candidateRecord = olderRecord;
 
 			var candidateRecordFound = false;
 
-			while ((candidateRecord !== null) &&
-			(newerRecord.getAcceptedCount() <= candidateRecord.getAcceptedCount())) {
+			if ((newerRecord.getAcceptedCount() <= olderRecord.getAcceptedCount()) &&
+				(olderRecord.getTotalCount() <= newerRecord.getTotalCount())) {
 
-				if ((candidateRecord.getAcceptedCount() === newerRecord.getAcceptedCount()) &&
-					(candidateRecord.getTargetState() === newerRecord.getTargetState())) {
-					candidateRecordFound = true;
-					break;
-				}
+				while ((candidateRecord !== null) &&
+				(newerRecord.getAcceptedCount() <= candidateRecord.getAcceptedCount())) {
 
-				candidateRecord = candidateRecord.getPreviousRecord();
-			}
-
-			if (candidateRecordFound) {
-				// Perform check going back from the checked record and similarly back from candidateRecord
-				// A forced skip in candidate record means the extension is not useless
-				var currentCandidateParent = candidateRecord;
-
-				var currentNewerParent = newerRecord;
-
-				uselesslyExtends = true;
-
-				while (currentCandidateParent !== currentNewerParent) {
-					if (currentNewerParent === null) {
-						uselesslyExtends = false;
+					if ((candidateRecord.getAcceptedCount() === newerRecord.getAcceptedCount()) &&
+						(candidateRecord.getTargetState() === newerRecord.getTargetState())) {
+						candidateRecordFound = true;
 						break;
 					}
 
-					var currentCandidateParentCharacters = currentCandidateParent.getCharacters();
+					candidateRecord = candidateRecord.getPreviousRecord();
+				}
 
-					var currenNewerParentCharacters = currentNewerParent.getCharacters();
+				if (candidateRecordFound) {
+					// Perform check going back from the checked record and similarly back from candidateRecord
+					// A forced skip in candidate record means the extension is not useless
+					var currentCandidateParent = candidateRecord;
 
-					if (currentCandidateParentCharacters.equals(currenNewerParentCharacters)) {
-						currentCandidateParent = currentCandidateParent.previousRecord;
+					var currentNewerParent = newerRecord;
+
+					uselesslyExtends = true;
+
+					while (currentCandidateParent !== currentNewerParent) {
+
+						if (currentCandidateParent === null) {
+							break;
+						}
+
+						if ((currentNewerParent === null) ||
+							(currentNewerParent.getAcceptedCount() < currentCandidateParent.getAcceptedCount())) {
+							uselesslyExtends = false;
+							break;
+						}
+
+						if ((currentCandidateParent.getAccepted()) ||
+							(currentCandidateParent.charactersEqual(currentNewerParent))) {
+
+							currentCandidateParent = currentCandidateParent.getPreviousRecord();
+						}
+
+						currentNewerParent = currentNewerParent.getPreviousRecord();
 					}
 
-					currentNewerParent = currentNewerParent.previousRecord;
 				}
 			}
 
 			return uselesslyExtends;
 		}
 
-		function isUsefulExtension (traverser, tailRecords, checkedTailRecordId) {
+		function isUsefulExtension (traverser, tailRecords, testedTailRecordId) {
 			var usefulExtension = true;
 
-			var checkedTailRecord = tailRecords[checkedTailRecordId];
+			var testedTailRecord = tailRecords[testedTailRecordId];
 
 			var finalRecords = getFinalRecords(traverser);
 
@@ -473,18 +482,22 @@ define(
 			for (var finalRecordId = 0; finalRecordId < finalRecordsCount; ++ finalRecordId) {
 				var currentFinalRecord = finalRecords[finalRecordId];
 
-				if (uselesslyExtends(currentFinalRecord, checkedTailRecord)) {
+				if ((currentFinalRecord !== testedTailRecord) &&
+					(uselesslyExtends(testedTailRecord, currentFinalRecord))) {
 					usefulExtension = false;
 					break;
 				}
 			}
 
+			// TODO: IMPLEMENT proper Check for tail records
 			if (usefulExtension) {
-				// Check tail records
-				for (var currentTailRecordId = 0; currentTailRecordId > checkedTailRecordId; ++currentTailRecordId) {
+				var tailRecordsCount = tailRecords.length;
+
+				for (var currentTailRecordId = 0; currentTailRecordId < tailRecordsCount; ++ currentTailRecordId) {
 					var currentTailRecord = tailRecords[currentTailRecordId];
 
-					if (uselesslyExtends(currentTailRecord, checkedTailRecord)) {
+					if ((currentTailRecord !== testedTailRecord) &&
+						(uselesslyExtends(testedTailRecord, currentTailRecord))) {
 						usefulExtension = false;
 						break;
 					}
