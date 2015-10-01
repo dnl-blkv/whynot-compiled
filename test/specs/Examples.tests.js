@@ -325,7 +325,7 @@ define(
 					//chai.expect(flattenResults(results)).to.deep.equal(['abccdddbbccdc']);
 				});
 
-				it('can run faster than wind', function() {
+				it('can run faster than wind with a simple regular expression', function() {
 
 					var regex = '(a|(bc))d(e|f)';
 
@@ -355,7 +355,9 @@ define(
 					var result = traverser.execute(createInput(inputString));
 
 					printResults(result);
+				});
 
+				it('can run faster than wind with a kleene-star regular expression of height 3', function () {
 					var kleeneTraverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
 
 					console.time('kleene-exec');
