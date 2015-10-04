@@ -507,6 +507,24 @@ define(
 			return usefulExtension;
 		}
 
+		function usefulRecord (traverser, tailRecords, tailRecordId) {
+
+			// Save tail record reference
+			var tailRecord = tailRecords[tailRecordId];
+
+			// Check for loops
+			var loopFree = !tailRecord.hasLoops(0);
+
+			// Check if useful extension
+			var usefulExtension = false;
+
+			if (loopFree) {
+				usefulExtension = isUsefulExtension(traverser, tailRecords, tailRecordId);
+			}
+
+			return (loopFree && usefulExtension);
+		}
+
 		/**
 		 * Executes a single tail, returns its derivatives.
 		 *
@@ -523,14 +541,8 @@ define(
 			// Create new tail records array
 			var tailDerivatives = [];
 
-			// Check for loops
-			var loopFree = !tailRecord.hasLoops(0);
-
-			// Check if useful extension
-			var usefulExtension = isUsefulExtension(traverser, tailRecords, tailRecordId);
-
 			// If no loops detected in the record
-			if (loopFree && usefulExtension) {
+			if (usefulRecord(traverser, tailRecords, tailRecordId)) {
 
 				// If the record appears final
 				if (isRecordFinal(traverser, input, tailRecord)) {
