@@ -325,6 +325,16 @@ define(
 					//chai.expect(flattenResults(results)).to.deep.equal(['abccdddbbccdc']);
 				});
 
+				it('can complete a real-life-like case with star-height of 2', function () {
+					// Check for partially matching result
+					var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
+
+					var results = traverser.execute(createInput('cbcbf'));
+
+					console.log('Regex: a(((e(b|c|d)*))|(g(b|c|f))))*h)');
+					console.log(flattenResults(results));
+				});
+
 				it('can run faster than wind with a simple regular expression', function() {
 
 					var regex = '(a|(bc))d(e|f)';
@@ -365,6 +375,15 @@ define(
 						kleeneTraverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
 					}
 					console.timeEnd('kleene-exec');
+				});
+
+				it('can run faster than wind with a real-life-like case with star-height of 2', function () {
+					// Check for partially matching result
+					var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
+
+					for (var j = 0; j < 1000; ++ j) {
+						traverser.execute(createInput('cbcbf'));
+					}
 				});
 			});
 		});
