@@ -261,6 +261,33 @@ define(
 				return processedResults;
 			}
 
+			function countResults (results) {
+				var branches = results.slice();
+
+				var currentBranchId = 0;
+
+				while (currentBranchId < branches.length) {
+					var currentRecord = branches[currentBranchId];
+
+					if (branches.indexOf(currentRecord) > currentBranchId) {
+						console.log('loop');
+					}
+
+					while (currentRecord !== null) {
+
+						if (currentRecord.alternativeRecords.length > 0) {
+							branches.splice.apply(branches, [currentBranchId + 1, 0].concat(currentRecord.alternativeRecords));
+						}
+
+						currentRecord = currentRecord.getPreviousRecord();
+					}
+
+					++ currentBranchId;
+				}
+
+				return branches.length;
+			}
+
 			// Testing with regular expressions
 			// Currently regular expressions converter supports the following elements:
 			// '(' and ')' for grouping
@@ -268,123 +295,135 @@ define(
 			// '*' for zero-or-more repetition (kleene star)
 			// + plain concatentaion
 			describe('regular expressions', function() {
-				it('can perform simple regex matching', function () {
-					var traverser = compileRegexTraverser('abc(d|e)f');
-
-					// Check for fully matching result
-					var fullMatchResult = traverser.execute(createInput('abcdf'));
-					chai.expect(fullMatchResult.length).to.equal(1);
-					chai.expect(fullMatchResult[0].getAcceptedCount()).to.equal(5);
-					chai.expect(fullMatchResult[0].getMissingCount()).to.equal(0);
-				});
+				//it('can perform simple regex matching', function () {
+				//	var traverser = compileRegexTraverser('abc(d|e)f');
+				//
+				//	// Check for fully matching result
+				//	var fullMatchResult = traverser.execute(createInput('abcdf'));
+				//
+				//	chai.expect(fullMatchResult.length).to.equal(1);
+				//	chai.expect(fullMatchResult[0].getAcceptedCount()).to.equal(5);
+				//	chai.expect(fullMatchResult[0].getMissingCount()).to.equal(0);
+				//});
 
 				it('can complete a string based on a regex', function () {
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('(a|(bc))d(e|f)');
 
-					console.log(flattenResults(traverser.execute(createInput('ad'))));
-
 					chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
 						[['a'], ['d'], ['e', 'f']]
 					]);
-
-					console.log(flattenResults(traverser.execute(createInput('bf'))));
 
 					chai.expect(processResults(traverser.execute(createInput('bf')))).to.deep.equal([
 						[['b'], ['c'], ['d'], ['f']]
 					]);
 
-					console.log(flattenResults(traverser.execute(createInput('d'))));
+					//console.log("BEGIN (a|(bc))d(e|f) / 'd'");
 
 					chai.expect(processResults(traverser.execute(createInput('d')))).to.deep.equal([
 						[['a'], ['d'], ['e', 'f']],
 						[['b'], ['c'], ['d'], ['e', 'f']]
 					]);
 
-					console.log(flattenResults(traverser.execute(createInput('abc'))));
+
+					//console.log("END (a|(bc))d(e|f) / 'd'");
 
 					chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
 				});
 
-				it('can complete a string based on a regex with star-height of 1', function() {
-					var traverser = compileRegexTraverser('(c|a|b)*ab');
-
-					var results = traverser.execute(createInput('abab'));
-
-					chai.expect(flattenResults(results)).to.deep.equal(['abab']);
-				});
-
-				it('can complete a string based on a regex with kleene-star', function () {
-					// Check for partially matching result
-					var traverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
-
-					var results = traverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
-
-					console.log('Regex: (a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
-					console.log(flattenResults(results));
-					//chai.expect(flattenResults(results)).to.deep.equal(['abccdddbbccdc']);
-				});
-
+				////it('can run faster than wind with a simple regex', function() {
+				////
+				////	var regex = '(a|(bc))d(e|f)';
+				////
+				////	console.log('Regular Expression: ' + regex);
+				////
+				////	console.time('compilation');
+				////
+				////	var traverser = compileRegexTraverser(regex);
+				////
+				////	console.timeEnd('compilation');
+				////
+				////	var inputString = 'ad';
+				////
+				////	console.log('Input: ' + inputString);
+				////	console.log('Compiled DFA info (below):');
+				////	console.log('Initial state: ' + traverser.initialState);
+				////	console.log('Transitions:', traverser.transitions);
+				////	console.log('Final states: ', traverser.finalStates);
+				////
+				////	console.time('simple-regex');
+				////
+				////	for (var i = 0; i < 100000; i ++) {
+				////		traverser.execute(createInput(inputString));
+				////	}
+				////
+				////	console.timeEnd('simple-regex');
+				////
+				////	var result = traverser.execute(createInput(inputString));
+				////
+				////	printResults(result);
+				////});
+				//
+				//
+				//it('can complete a string based on a regex with star-height of 1', function() {
+				//	var traverser = compileRegexTraverser('(c|a|b)*ab');
+				//
+				//	var results = traverser.execute(createInput('abab'));
+				//
+				//	chai.expect(flattenResults(results)).to.deep.equal(['abab']);
+				//});
+				//
 				it('can complete a real-life-like case with star-height of 2', function () {
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
 
-					var results = traverser.execute(createInput('cbcbf'));
+					var inputString = 'cbcbfcbcbecbcbfcbcbe';
 
-					console.log('Regex: a(((e(b|c|d)*))|(g(b|c|f))))*h)');
-					console.log(flattenResults(results));
-				});
+					console.time('star-height-2');
+					var results = traverser.execute(createInput(inputString));
+					console.timeEnd('star-height-2');
 
-				it('can run faster than wind with a simple regular expression', function() {
-
-					var regex = '(a|(bc))d(e|f)';
-
-					console.log('Regular Expression: ' + regex);
-
-					console.time('compilation');
-
-					var traverser = compileRegexTraverser(regex);
-
-					console.timeEnd('compilation');
-
-					var inputString = 'ad';
-
+					console.log('Regex: a((e(b|c|d)*)|(g(b|c|f)*))*h');
 					console.log('Input: ' + inputString);
-					console.log('Compiled DFA info (below):');
-					console.log('Initial state: ' + traverser.initialState);
-					console.log('Transitions:', traverser.transitions);
-					console.log('Final states: ', traverser.finalStates);
-					console.time('execution');
-
-					for (var i = 0; i < 100000; i ++) {
-						traverser.execute(createInput(inputString));
-					}
-
-					console.timeEnd('execution');
-
-					var result = traverser.execute(createInput(inputString));
-
-					printResults(result);
-				});
-
-				it('can run faster than wind with a kleene-star regular expression of height 3', function () {
-					var kleeneTraverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
-
-					console.time('kleene-exec');
-					for (var j = 0; j < 1000; ++ j) {
-						kleeneTraverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
-					}
-					console.timeEnd('kleene-exec');
+					console.log(flattenResults(results));
 				});
 
 				it('can run faster than wind with a real-life-like case with star-height of 2', function () {
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
 
-					for (var j = 0; j < 1000; ++ j) {
-						traverser.execute(createInput('cbcbf'));
+					console.time('star-height-2');
+					for (var j = 0; j < 100; ++ j) {
+						traverser.execute(createInput('cbcbfcbcbecbcbfcbcbe'));
 					}
+					console.timeEnd('star-height-2');
+
+					//var results = traverser.execute(createInput('cbcbfcbcbecbcbfcbcbe'));
+					//
+					//console.log(flattenResults(results));
 				});
+				//
+				//it('can complete a string based on a regex with star-height of 3', function () {
+				//	// Check for partially matching result
+				//	var traverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
+				//
+				//	var results = traverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
+				//
+				//	console.log('Regex: (a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
+				//	console.log(flattenResults(results));
+				//	//chai.expect(flattenResults(results)).to.deep.equal(['abccdddbbccdc']);
+				//});
+				//
+				////it('can run faster than wind with a kleene-star regular expression of height 3', function () {
+				////	var kleeneTraverser = compileRegexTraverser('(a|(bc))d(e|f)(((abcde)*fghij)*((fghij)*klmno)(klmno(pqrst)*)*)*klmno');
+				////
+				////	console.time('star-height-3');
+				////	for (var j = 0; j < 1000; ++ j) {
+				////		kleeneTraverser.execute(createInput('dabcdefghijklmnopqrstpqrstpqrstfghijfghijpqrst'));
+				////	}
+				////	console.timeEnd('star-height-3');
+				////});
+
 			});
 		});
 	}

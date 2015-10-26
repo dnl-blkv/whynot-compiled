@@ -410,103 +410,134 @@ define(
 			traverser.finalRecords.push(record);
 		}
 
-		function uselesslyExtends (newerRecord, olderRecord) {
-			var uselesslyExtends = false;
+		/**
+		 * Finds a record which is possibly extended by some new record.
+		 *
+		 * @param newerRecord
+		 * @param olderRecord
+		 * @returns {*}
+		 */
+		function findBaseCandidate (newerRecord, olderRecord) {
+			var baseCandidate = olderRecord;
 
-			// Find candidate record
-			var candidateRecord = olderRecord;
+			var baseCandidateFound = false;
 
-			var candidateRecordFound = false;
+			while ((baseCandidate !== null) &&
+			(newerRecord.getAcceptedCount() <= baseCandidate.getAcceptedCount())) {
 
-			if ((newerRecord.getAcceptedCount() <= olderRecord.getAcceptedCount()) &&
-				(olderRecord.getTotalCount() <= newerRecord.getTotalCount())) {
+				if ((baseCandidate.getAcceptedCount() === newerRecord.getAcceptedCount()) &&
+					(baseCandidate.getTargetState() === newerRecord.getTargetState())) {
+					baseCandidateFound = true;
+					break;
+				}
 
-				while ((candidateRecord !== null) &&
-				(newerRecord.getAcceptedCount() <= candidateRecord.getAcceptedCount())) {
+				baseCandidate = baseCandidate.getPreviousRecord();
+			}
 
-					if ((candidateRecord.getAcceptedCount() === newerRecord.getAcceptedCount()) &&
-						(candidateRecord.getTargetState() === newerRecord.getTargetState())) {
-						candidateRecordFound = true;
+			if (!baseCandidateFound) {
+				baseCandidate = null;
+			}
+
+			return baseCandidate;
+		}
+
+		function isExtensionOf (extensionCandidate, baseCandidate) {
+			// Perform check going back from the checked record and similarly back from candidateRecord
+			// A "missing" character in candidate record means the extension is not useless
+			var extension = true;
+
+			var baseCandidateAncestor = baseCandidate;
+
+			var newerRecordAncestor = extensionCandidate;
+
+			while (baseCandidateAncestor !== newerRecordAncestor) {
+
+				if ((baseCandidateAncestor === null) ||
+					(newerRecordAncestor === null) ||
+					(newerRecordAncestor.getTotalCount() < baseCandidateAncestor.getTotalCount())) {
+
+					if (baseCandidateAncestor === null) {
 						break;
 					}
 
-					candidateRecord = candidateRecord.getPreviousRecord();
+					extension = false;
+
+					break;
 				}
 
-				if (candidateRecordFound) {
-					// Perform check going back from the checked record and similarly back from candidateRecord
-					// A forced skip in candidate record means the extension is not useless
-					var currentCandidateParent = candidateRecord;
-
-					var currentNewerParent = newerRecord;
-
-					uselesslyExtends = true;
-
-					while (currentCandidateParent !== currentNewerParent) {
-
-						if (currentCandidateParent === null) {
-							break;
-						}
-
-						if ((currentNewerParent === null) ||
-							(currentNewerParent.getAcceptedCount() < currentCandidateParent.getAcceptedCount())) {
-							uselesslyExtends = false;
-							break;
-						}
-
-						if ((currentCandidateParent.getAccepted()) ||
-							(currentCandidateParent.charactersEqual(currentNewerParent))) {
-
-							currentCandidateParent = currentCandidateParent.getPreviousRecord();
-						}
-
-						currentNewerParent = currentNewerParent.getPreviousRecord();
-					}
-
+				if (newerRecordAncestor.isPartialOf(baseCandidateAncestor)) {
+					baseCandidateAncestor = baseCandidateAncestor.getPreviousRecord();
 				}
+
+				newerRecordAncestor = newerRecordAncestor.getPreviousRecord();
 			}
 
-			return uselesslyExtends;
+			return extension;
 		}
 
-		function isUsefulExtension (traverser, tailRecords, testedTailRecordId) {
-			var usefulExtension = true;
+		/**
+		 * Check if a currently processed record is a useful alternative of some other record
+		 *
+		 * @param traverser				// Functional-style "this" reference
+		 * @param currentTailRecords	// Array of currently processed tail records
+		 * @param testedTailRecordId	// Id of currently processed tail record
+		 * @returns {boolean}
+		 */
+		function isAlternative (traverser, currentTailRecords, testedTailRecordId) {
+			var alternative = true;
 
-			var testedTailRecord = tailRecords[testedTailRecordId];
+			var testedTailRecord = currentTailRecords[testedTailRecordId];
 
 			var finalRecords = getFinalRecords(traverser);
 
 			var finalRecordsCount = finalRecords.length;
 
+			var baseCandidate = null;
+
+			var uselesslyExtends = false;
+
 			// Check final records
 			for (var finalRecordId = 0; finalRecordId < finalRecordsCount; ++ finalRecordId) {
 				var currentFinalRecord = finalRecords[finalRecordId];
 
-				if ((currentFinalRecord !== testedTailRecord) &&
-					(uselesslyExtends(testedTailRecord, currentFinalRecord))) {
-					usefulExtension = false;
+				baseCandidate = findBaseCandidate(testedTailRecord, currentFinalRecord);
+
+				uselesslyExtends = ((baseCandidate !== null) && isExtensionOf(testedTailRecord, baseCandidate));
+
+				if ((currentFinalRecord !== testedTailRecord) && uselesslyExtends) {
+					alternative = false;
 					break;
 				}
 			}
 
-			// TODO: IMPLEMENT proper Check for tail records
-			if (usefulExtension) {
-				var tailRecordsCount = tailRecords.length;
+			if (alternative) {
+				for (var currentTailRecordId = 0; currentTailRecordId < testedTailRecordId; ++ currentTailRecordId) {
+					var currentTailRecord = currentTailRecords[currentTailRecordId];
 
-				for (var currentTailRecordId = 0; currentTailRecordId < tailRecordsCount; ++ currentTailRecordId) {
-					var currentTailRecord = tailRecords[currentTailRecordId];
+					baseCandidate = findBaseCandidate(testedTailRecord, currentTailRecord);
 
-					if ((currentTailRecord !== testedTailRecord) &&
-						(uselesslyExtends(testedTailRecord, currentTailRecord))) {
-						usefulExtension = false;
+					uselesslyExtends = ((baseCandidate !== null) && isExtensionOf(testedTailRecord, baseCandidate));
+
+					if ((currentTailRecord !== testedTailRecord) && uselesslyExtends) {
+						alternative = false;
 						break;
 					}
 				}
 			}
 
-			return usefulExtension;
+			//if (baseCandidate === null) { /* LET THE RECORD FURHTER */ }
+
+			return alternative;
 		}
 
+		/**
+		 * Check if a record is useful for the answer
+		 *
+		 * @param traverser
+		 * @param tailRecords
+		 * @param tailRecordId
+		 * @returns {boolean}
+		 */
 		function usefulRecord (traverser, tailRecords, tailRecordId) {
 
 			// Save tail record reference
@@ -519,10 +550,44 @@ define(
 			var usefulExtension = false;
 
 			if (loopFree) {
-				usefulExtension = isUsefulExtension(traverser, tailRecords, tailRecordId);
+				usefulExtension = isAlternative(traverser, tailRecords, tailRecordId);
 			}
 
 			return (loopFree && usefulExtension);
+		}
+
+		/**
+		 * From original Whynot
+		 * Find proper position to insert a new record
+		 * @param currentTails
+		 * @param missingCount
+		 * @returns {number}
+		 */
+		function findInsertionIndex (currentTails, missingCount) {
+			// Perform a binary search to find the index of the first thread with lower badness
+			var low = 0,
+				high = currentTails.length;
+
+			while (low < high) {
+				// Use zero-filling shift as integer division
+				var mid = (low + high) >>> 1;
+				// Compare to mid point, preferring right in case of equality
+				if (missingCount < currentTails[mid].getMissingCount()) {
+					// Thread goes in lower half
+					high = mid;
+				} else {
+					// Thread goes in upper half
+					low = mid + 1;
+				}
+			}
+
+			return low;
+		}
+
+		function insertNewTailRecord (currentTails, tailRecord) {
+			var insertionIndex = findInsertionIndex (currentTails, tailRecord.getMissingCount());
+
+			currentTails.splice(insertionIndex, 0, tailRecord);
 		}
 
 		/**
@@ -532,14 +597,12 @@ define(
 		 * @param input
 		 * @param tailRecords
 		 * @param tailRecordId
+		 * @param nextTailRecords
 		 */
-		function processTailRecord (traverser, input, tailRecords, tailRecordId) {
+		function processTailRecord (traverser, input, tailRecords, tailRecordId, nextTailRecords) {
 
 			// Save the current record reference
 			var tailRecord = tailRecords[tailRecordId];
-
-			// Create new tail records array
-			var tailDerivatives = [];
 
 			// If no loops detected in the record
 			if (usefulRecord(traverser, tailRecords, tailRecordId)) {
@@ -597,7 +660,7 @@ define(
 							var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
 
 							// Add the new accept record to the tail derivatives
-							tailDerivatives.push(newAcceptRecord);
+							insertNewTailRecord(nextTailRecords, newAcceptRecord);
 						}
 
 						// Add a new missing record for a missing characters from accepted transported transition
@@ -613,7 +676,7 @@ define(
 								transportedTransition, nextInputItem, nextState);
 
 							// Add the new partially accepted record to the tail derivatives
-							tailDerivatives.push(newPartiallyMissingRecord);
+							insertNewTailRecord(nextTailRecords, newPartiallyMissingRecord);
 						}
 
 					}
@@ -645,13 +708,11 @@ define(
 							var nextMissingRecord = createMissingRecord(tailRecord, currentTransportedTransition, currentTransportedTransitionState);
 
 							// Add the next accepted record to the tail derivatives
-							tailDerivatives.push(nextMissingRecord);
+							insertNewTailRecord(nextTailRecords, nextMissingRecord);
 						}
 					}
 				}
 			}
-
-			return tailDerivatives;
 		}
 
 		/**
@@ -659,29 +720,29 @@ define(
 		 *
 		 * @param traverser
 		 * @param input
-		 * @param tailRecords
+		 * @param latestTailRecords
 		 * @returns {Array}
 		 */
-		function processLatestTailRecords (traverser, input, tailRecords) {
+		function processLatestTailRecords (traverser, input, latestTailRecords) {
 
 			// Create new tail records array
-			var newTailRecords = [];
+			var nextTailRecords = [];
 
 			// Save the amount of tail records
-			var tailRecordsCount = tailRecords.length;
+			var tailRecordsCount = latestTailRecords.length;
 
 			// Loop over the tail records
 			for (var currentTailRecordId = 0; currentTailRecordId < tailRecordsCount; currentTailRecordId ++) {
 
 				// Execute the current tail record and get its derivatives
-				var currentTailDerivatives = processTailRecord(traverser, input, tailRecords, currentTailRecordId);
+				processTailRecord(traverser, input, latestTailRecords, currentTailRecordId, nextTailRecords);
 
-				// Add current tail derivatives to the new tail records array
-				newTailRecords = newTailRecords.concat(currentTailDerivatives);
 			}
 
+			//console.log(nextTailRecords);
+
 			// Return result of current tails array execution
-			return newTailRecords;
+			return nextTailRecords;
 		}
 
 		/**

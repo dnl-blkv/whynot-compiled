@@ -47,8 +47,6 @@ define(
 				}
 
 			}
-
-			// TODO: implement loop detection
 		}
 
 		Record.prototype.getPreviousRecord = function () {
@@ -61,6 +59,38 @@ define(
 
 		Record.prototype.getCharacters = function () {
 			return this.characters;
+		};
+
+		Record.prototype.isPartialOf = function (anotherRecord) {
+			var characters = this.getCharacters();
+
+			var charactersCount = characters.length;
+
+			var anotherCharacters = anotherRecord.getCharacters();
+
+			var anotherCharactersCount = anotherCharacters.length;
+
+			var isPartial = true;
+
+			if ((charactersCount < (anotherCharactersCount - 1)) ||
+				(charactersCount > anotherCharactersCount)) {
+				isPartial = false;
+			}
+
+			var missesCount = 0;
+
+			if (isPartial) {
+				for (var characterId = 0; characterId < charactersCount; ++ characterId) {
+					if (characters[characterId] !== anotherCharacters[characterId + missesCount]) {
+						++ missesCount;
+						if ((missesCount === 1) && (charactersCount === 1) || (missesCount > 1)) {
+							isPartial = false;
+						}
+					}
+				}
+			}
+
+			return isPartial;
 		};
 
 		Record.prototype.charactersEqual = function (anotherRecord) {
