@@ -47,6 +47,8 @@ define(
 				}
 
 			}
+
+			this.alternatives = [];
 		}
 
 		Record.prototype.getPreviousRecord = function () {
@@ -59,6 +61,70 @@ define(
 
 		Record.prototype.getCharacters = function () {
 			return this.characters;
+		};
+
+		/**
+		 * Find a possible base for which this records serves an extension in ancestors chain of another record.
+		 *
+		 * @param olderRecord
+		 * @returns {*}
+		 */
+		Record.prototype.findBaseCandidate = function (olderRecord) {
+			var baseCandidate = olderRecord;
+
+			var baseCandidateFound = false;
+
+			while ((baseCandidate !== null) &&
+			(this.getAcceptedCount() <= baseCandidate.getAcceptedCount())) {
+
+				if ((baseCandidate.getAcceptedCount() === this.getAcceptedCount()) &&
+					(baseCandidate.getTargetState() === this.getTargetState())) {
+					baseCandidateFound = true;
+					break;
+				}
+
+				baseCandidate = baseCandidate.getPreviousRecord();
+			}
+
+			if (!baseCandidateFound) {
+				baseCandidate = null;
+			}
+
+			return baseCandidate;
+		};
+
+		Record.prototype.isExtensionOf = function (baseCandidate) {
+			// Perform check going back from the checked record and similarly back from candidateRecord
+			// A "missing" character in candidate record means the extension is not useless
+			var extension = true;
+
+			var baseCandidateAncestor = baseCandidate;
+
+			var newerRecordAncestor = this;
+
+			while (baseCandidateAncestor !== newerRecordAncestor) {
+
+				if ((baseCandidateAncestor === null) ||
+					(newerRecordAncestor === null) ||
+					(newerRecordAncestor.getTotalCount() < baseCandidateAncestor.getTotalCount())) {
+
+					if (baseCandidateAncestor === null) {
+						break;
+					}
+
+					extension = false;
+
+					break;
+				}
+
+				if (newerRecordAncestor.isPartialOf(baseCandidateAncestor)) {
+					baseCandidateAncestor = baseCandidateAncestor.getPreviousRecord();
+				}
+
+				newerRecordAncestor = newerRecordAncestor.getPreviousRecord();
+			}
+
+			return extension;
 		};
 
 		Record.prototype.isPartialOf = function (anotherRecord) {
@@ -154,6 +220,14 @@ define(
 
 			// Return the flag determining the loops presence
 			return hasLoops;
+		};
+
+		Record.prototype.addAlternative = function (alternative) {
+			this.alternatives.push(alternative);
+		};
+
+		Record.prototype.getAlternatives = function () {
+			return this.alternatives;
 		};
 
 		return Record;

@@ -411,71 +411,6 @@ define(
 		}
 
 		/**
-		 * Finds a record which is possibly extended by some new record.
-		 *
-		 * @param newerRecord
-		 * @param olderRecord
-		 * @returns {*}
-		 */
-		function findBaseCandidate (newerRecord, olderRecord) {
-			var baseCandidate = olderRecord;
-
-			var baseCandidateFound = false;
-
-			while ((baseCandidate !== null) &&
-			(newerRecord.getAcceptedCount() <= baseCandidate.getAcceptedCount())) {
-
-				if ((baseCandidate.getAcceptedCount() === newerRecord.getAcceptedCount()) &&
-					(baseCandidate.getTargetState() === newerRecord.getTargetState())) {
-					baseCandidateFound = true;
-					break;
-				}
-
-				baseCandidate = baseCandidate.getPreviousRecord();
-			}
-
-			if (!baseCandidateFound) {
-				baseCandidate = null;
-			}
-
-			return baseCandidate;
-		}
-
-		function isExtensionOf (extensionCandidate, baseCandidate) {
-			// Perform check going back from the checked record and similarly back from candidateRecord
-			// A "missing" character in candidate record means the extension is not useless
-			var extension = true;
-
-			var baseCandidateAncestor = baseCandidate;
-
-			var newerRecordAncestor = extensionCandidate;
-
-			while (baseCandidateAncestor !== newerRecordAncestor) {
-
-				if ((baseCandidateAncestor === null) ||
-					(newerRecordAncestor === null) ||
-					(newerRecordAncestor.getTotalCount() < baseCandidateAncestor.getTotalCount())) {
-
-					if (baseCandidateAncestor === null) {
-						break;
-					}
-
-					extension = false;
-
-					break;
-				}
-
-				if (newerRecordAncestor.isPartialOf(baseCandidateAncestor)) {
-					baseCandidateAncestor = baseCandidateAncestor.getPreviousRecord();
-				}
-
-				newerRecordAncestor = newerRecordAncestor.getPreviousRecord();
-			}
-
-			return extension;
-		}
-
-		/**
 		 * Check if a currently processed record is a useful alternative of some other record
 		 *
 		 * @param traverser				// Functional-style "this" reference
@@ -500,9 +435,9 @@ define(
 			for (var finalRecordId = 0; finalRecordId < finalRecordsCount; ++ finalRecordId) {
 				var currentFinalRecord = finalRecords[finalRecordId];
 
-				baseCandidate = findBaseCandidate(testedTailRecord, currentFinalRecord);
+				baseCandidate = testedTailRecord.findBaseCandidate(currentFinalRecord);
 
-				uselesslyExtends = ((baseCandidate !== null) && isExtensionOf(testedTailRecord, baseCandidate));
+				uselesslyExtends = ((baseCandidate !== null) && testedTailRecord.isExtensionOf(baseCandidate));
 
 				if ((currentFinalRecord !== testedTailRecord) && uselesslyExtends) {
 					alternative = false;
@@ -514,9 +449,9 @@ define(
 				for (var currentTailRecordId = 0; currentTailRecordId < testedTailRecordId; ++ currentTailRecordId) {
 					var currentTailRecord = currentTailRecords[currentTailRecordId];
 
-					baseCandidate = findBaseCandidate(testedTailRecord, currentTailRecord);
+					baseCandidate = testedTailRecord.findBaseCandidate(currentTailRecord);
 
-					uselesslyExtends = ((baseCandidate !== null) && isExtensionOf(testedTailRecord, baseCandidate));
+					uselesslyExtends = ((baseCandidate !== null) && testedTailRecord.isExtensionOf(baseCandidate));
 
 					if ((currentTailRecord !== testedTailRecord) && uselesslyExtends) {
 						alternative = false;

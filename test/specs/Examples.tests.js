@@ -17,7 +17,7 @@ define(
 		var Traverser = whynotPremadePlayer.Traverser;
 
 		// Showcase examples of Whynot Premade System
-		describe('Whynot Premade System Examples', function() {
+		describe('Examples', function() {
 
 			// Mimicking Whynot, the Whynot Premade System expects to receive input char-by-char.
 			// Here's a simple helper which creates this iterator based on a string or array:
@@ -259,33 +259,6 @@ define(
 				}
 
 				return processedResults;
-			}
-
-			function countResults (results) {
-				var branches = results.slice();
-
-				var currentBranchId = 0;
-
-				while (currentBranchId < branches.length) {
-					var currentRecord = branches[currentBranchId];
-
-					if (branches.indexOf(currentRecord) > currentBranchId) {
-						console.log('loop');
-					}
-
-					while (currentRecord !== null) {
-
-						if (currentRecord.alternativeRecords.length > 0) {
-							branches.splice.apply(branches, [currentBranchId + 1, 0].concat(currentRecord.alternativeRecords));
-						}
-
-						currentRecord = currentRecord.getPreviousRecord();
-					}
-
-					++ currentBranchId;
-				}
-
-				return branches.length;
 			}
 
 			// Testing with regular expressions
