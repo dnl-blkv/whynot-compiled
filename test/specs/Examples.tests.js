@@ -261,6 +261,59 @@ define(
 				return processedResults;
 			}
 
+			function restoreMergedResult (result) {
+				var flatResults = [[]];
+
+				var branchId = 0;
+
+				var branches = [result];
+
+				var currentBranch = branches[0];
+
+				var currentFlatResult = flatResults[0];
+
+				var branchHistory = [];
+
+				var i = 0;
+
+				while (branchId < branches.length) {
+					currentBranch = branches[branchId];
+
+					if (branchHistory.indexOf(currentBranch) > -1) {
+						console.log('DUPLICATE: ', branchHistory.indexOf(currentBranch), currentBranch);
+						++ i;
+						if (i > 0) {
+							break;
+						}
+					}
+
+					branchHistory.push(currentBranch);
+
+					currentFlatResult = flatResults[branchId];
+
+					while (currentBranch.getPreviousRecord() !== null) {
+
+						var alternativeRecords = currentBranch.getAlternativeRecords();
+
+						var alternativeRecordsCount = alternativeRecords.length;
+
+						for (var alternativeId = 0; alternativeId < alternativeRecordsCount; ++ alternativeId) {
+							var currentAlternative = alternativeRecords[alternativeId];
+							flatResults.push(currentFlatResult.slice());
+							branches.push(currentAlternative);
+						}
+
+						currentFlatResult.push(currentBranch.getCharacters());
+
+						currentBranch = currentBranch.getPreviousRecord();
+					}
+
+					++ branchId;
+				}
+
+				return flatResults;
+			}
+
 			// Testing with regular expressions
 			// Currently regular expressions converter supports the following elements:
 			// '(' and ')' for grouping
@@ -281,27 +334,29 @@ define(
 
 				it('can complete a string based on a regex', function () {
 					// Check for partially matching result
-					var traverser = compileRegexTraverser('(a|(bc))d(e|f)');
+					var traverser = compileRegexTraverser('(a|(bc)|(pbcx))d(e|f)');
 
-					chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
-						[['a'], ['d'], ['e', 'f']]
-					]);
+					console.log(restoreMergedResult(traverser.execute(createInput('d'))[0]));
 
-					chai.expect(processResults(traverser.execute(createInput('bf')))).to.deep.equal([
-						[['b'], ['c'], ['d'], ['f']]
-					]);
-
-					//console.log("BEGIN (a|(bc))d(e|f) / 'd'");
-
-					chai.expect(processResults(traverser.execute(createInput('d')))).to.deep.equal([
-						[['a'], ['d'], ['e', 'f']],
-						[['b'], ['c'], ['d'], ['e', 'f']]
-					]);
-
-
-					//console.log("END (a|(bc))d(e|f) / 'd'");
-
-					chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
+					//chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
+					//	[['a'], ['d'], ['e', 'f']]
+					//]);
+					//
+					//chai.expect(processResults(traverser.execute(createInput('bf')))).to.deep.equal([
+					//	[['b'], ['c'], ['d'], ['f']]
+					//]);
+					//
+					////console.log("BEGIN (a|(bc))d(e|f) / 'd'");
+					//
+					//chai.expect(processResults(traverser.execute(createInput('d')))).to.deep.equal([
+					//	[['a'], ['d'], ['e', 'f']],
+					//	[['b'], ['c'], ['d'], ['e', 'f']]
+					//]);
+					//
+					//
+					////console.log("END (a|(bc))d(e|f) / 'd'");
+					//
+					//chai.expect(processResults(traverser.execute(createInput('abc')))).to.deep.equal([]);
 				});
 
 				////it('can run faster than wind with a simple regex', function() {
@@ -352,29 +407,34 @@ define(
 
 					var inputString = 'cbcbfcbcbecbcbfcbcbe';
 
-					console.time('star-height-2');
+					console.log(traverser);
+
+					console.time('star-height-2-single');
 					var results = traverser.execute(createInput(inputString));
-					console.timeEnd('star-height-2');
+					console.timeEnd('star-height-2-single');
+
+					//console.log(restoreMergedResult(results[0]));
+					console.log(results);
 
 					console.log('Regex: a((e(b|c|d)*)|(g(b|c|f)*))*h');
 					console.log('Input: ' + inputString);
 					console.log(flattenResults(results));
 				});
 
-				it('can run faster than wind with a real-life-like case with star-height of 2', function () {
-					// Check for partially matching result
-					var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
-
-					console.time('star-height-2');
-					for (var j = 0; j < 100; ++ j) {
-						traverser.execute(createInput('cbcbfcbcbecbcbfcbcbe'));
-					}
-					console.timeEnd('star-height-2');
-
-					//var results = traverser.execute(createInput('cbcbfcbcbecbcbfcbcbe'));
-					//
-					//console.log(flattenResults(results));
-				});
+				//it('can run faster than wind with a real-life-like case with star-height of 2', function () {
+				//	// Check for partially matching result
+				//	var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
+				//
+				//	console.time('star-height-2-x-100');
+				//	for (var j = 0; j < 100; ++ j) {
+				//		traverser.execute(createInput('cbcbfcbcbecbcbfcbcbe'));
+				//	}
+				//	console.timeEnd('star-height-2-x-100');
+				//
+				//	//var results = traverser.execute(createInput('cbcbfcbcbecbcbfcbcbe'));
+				//	//
+				//	//console.log(flattenResults(results));
+				//});
 				//
 				//it('can complete a string based on a regex with star-height of 3', function () {
 				//	// Check for partially matching result

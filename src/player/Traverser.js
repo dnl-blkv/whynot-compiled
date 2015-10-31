@@ -414,14 +414,12 @@ define(
 		 * Check if a currently processed record is a useful alternative of some other record
 		 *
 		 * @param traverser				// Functional-style "this" reference
-		 * @param currentTailRecords	// Array of currently processed tail records
-		 * @param testedTailRecordId	// Id of currently processed tail record
+		 * @param tailRecords	// Array of currently processed tail records
+		 * @param testedRecord
+		 * @param testedRecordInsertionIndex
 		 * @returns {boolean}
 		 */
-		function isAlternative (traverser, currentTailRecords, testedTailRecordId) {
-			var alternative = true;
-
-			var testedTailRecord = currentTailRecords[testedTailRecordId];
+		function isAnAlternative (traverser, tailRecords, testedRecord, testedRecordInsertionIndex) {
 
 			var finalRecords = getFinalRecords(traverser);
 
@@ -435,34 +433,30 @@ define(
 			for (var finalRecordId = 0; finalRecordId < finalRecordsCount; ++ finalRecordId) {
 				var currentFinalRecord = finalRecords[finalRecordId];
 
-				baseCandidate = testedTailRecord.findBaseCandidate(currentFinalRecord);
+				baseCandidate = testedRecord.findBaseCandidate(currentFinalRecord);
 
-				uselesslyExtends = ((baseCandidate !== null) && testedTailRecord.isExtensionOf(baseCandidate));
+				uselesslyExtends = ((baseCandidate !== null) && testedRecord.isExtensionOf(baseCandidate));
 
-				if ((currentFinalRecord !== testedTailRecord) && uselesslyExtends) {
-					alternative = false;
-					break;
+				if ((currentFinalRecord !== testedRecord) && uselesslyExtends) {
+					// Is an alternative of an existing final record
+					return false;
 				}
 			}
 
-			if (alternative) {
-				for (var currentTailRecordId = 0; currentTailRecordId < testedTailRecordId; ++ currentTailRecordId) {
-					var currentTailRecord = currentTailRecords[currentTailRecordId];
+			for (var currentTailRecordId = 0; currentTailRecordId < testedRecordInsertionIndex; ++ currentTailRecordId) {
+				var currentTailRecord = tailRecords[currentTailRecordId];
 
-					baseCandidate = testedTailRecord.findBaseCandidate(currentTailRecord);
+				baseCandidate = testedRecord.findBaseCandidate(currentTailRecord);
 
-					uselesslyExtends = ((baseCandidate !== null) && testedTailRecord.isExtensionOf(baseCandidate));
+				uselesslyExtends = ((baseCandidate !== null) && testedRecord.isExtensionOf(baseCandidate));
 
-					if ((currentTailRecord !== testedTailRecord) && uselesslyExtends) {
-						alternative = false;
-						break;
-					}
+				if ((currentTailRecord !== testedRecord) && uselesslyExtends) {
+					// Is an alternative of an existing tail record
+					return false;
 				}
 			}
 
-			//if (baseCandidate === null) { /* LET THE RECORD FURHTER */ }
-
-			return alternative;
+			return true;
 		}
 
 		/**
@@ -470,22 +464,20 @@ define(
 		 *
 		 * @param traverser
 		 * @param tailRecords
-		 * @param tailRecordId
+		 * @param testedRecord
+		 * @param testedRecordInsertionIndex
 		 * @returns {boolean}
 		 */
-		function usefulRecord (traverser, tailRecords, tailRecordId) {
-
-			// Save tail record reference
-			var tailRecord = tailRecords[tailRecordId];
+		function usefulRecord (traverser, tailRecords, testedRecord, testedRecordInsertionIndex) {
 
 			// Check for loops
-			var loopFree = !tailRecord.hasLoops(0);
+			var loopFree = !testedRecord.hasLoops();
 
 			// Check if useful extension
 			var usefulExtension = false;
 
 			if (loopFree) {
-				usefulExtension = isAlternative(traverser, tailRecords, tailRecordId);
+				usefulExtension = isAnAlternative(traverser, tailRecords, testedRecord, testedRecordInsertionIndex);
 			}
 
 			return (loopFree && usefulExtension);
@@ -519,10 +511,14 @@ define(
 			return low;
 		}
 
-		function insertNewTailRecord (currentTails, tailRecord) {
-			var insertionIndex = findInsertionIndex (currentTails, tailRecord.getMissingCount());
+		function insertNewTailRecord (traverser, tailRecords, newTailRecord) {
+			var insertionIndex = findInsertionIndex(tailRecords, newTailRecord.getMissingCount());
 
-			currentTails.splice(insertionIndex, 0, tailRecord);
+			var useful = usefulRecord(traverser, tailRecords, newTailRecord, insertionIndex);
+
+			if (useful) {
+				tailRecords.splice(insertionIndex, 0, newTailRecord);
+			}
 		}
 
 		/**
@@ -539,112 +535,108 @@ define(
 			// Save the current record reference
 			var tailRecord = tailRecords[tailRecordId];
 
-			// If no loops detected in the record
-			if (usefulRecord(traverser, tailRecords, tailRecordId)) {
+			// If the record appears final
+			if (isRecordFinal(traverser, input, tailRecord)) {
 
-				// If the record appears final
-				if (isRecordFinal(traverser, input, tailRecord)) {
+				// Save it as final
+				saveFinalRecord(traverser, tailRecord);
+			} else {
 
-					// Save it as final
-					saveFinalRecord(traverser, tailRecord);
-				} else {
+				// Save the current state number
+				var currentState = tailRecord.getTargetState();
 
-					// Save the current state number
-					var currentState = tailRecord.getTargetState();
+				// Get the next input item for the current record
+				var nextInputItem = getNextInputItemForRecord(traverser, input, tailRecord);
 
-					// Get the next input item for the current record
-					var nextInputItem = getNextInputItemForRecord(traverser, input, tailRecord);
+				// Get the next state for the record
+				var nextState = getNextState(traverser, currentState, nextInputItem);
 
-					// Get the next state for the record
-					var nextState = getNextState(traverser, currentState, nextInputItem);
+				// Save transported transitions for current state
+				var currentStateTransportedTransitions = getStateTransportedTransitions(traverser, currentState);
 
-					// Save transported transitions for current state
-					var currentStateTransportedTransitions = getStateTransportedTransitions(traverser, currentState);
+				// Save the next state as a string index
+				var nextStateAsString = nextState + '';
 
-					// Save the next state as a string index
-					var nextStateAsString = nextState + '';
+				// If the next state exists
+				if (nextState !== undefined) {
 
-					// If the next state exists
-					if (nextState !== undefined) {
+					// Add a new accept record for the accepted transition
 
-						// Add a new accept record for the accepted transition
+					// Only if not finishing an extra expansion
+					var simpleUselessExtension = false;
 
-						// Only if not finishing an extra expansion
-						var simpleUselessExtension = false;
+					// If currently processed record is failing
+					if (!tailRecord.getAccepted()) {
 
-						// If currently processed record is failing
-						if (!tailRecord.getAccepted()) {
+						// Save last accept record for reference
+						var lastAcceptRecord = tailRecord.getLastAcceptRecord();
 
-							// Save last accept record for reference
-							var lastAcceptRecord = tailRecord.getLastAcceptRecord();
+						// If there was at least one accept record earlier
+						if (lastAcceptRecord !== null) {
 
-							// If there was at least one accept record earlier
-							if (lastAcceptRecord !== null) {
+							// Calculate the possible shortcut state
+							var shortcutState = getNextState(traverser, lastAcceptRecord.getTargetState(), nextInputItem);
 
-								// Calculate the possible shortcut state
-								var shortcutState = getNextState(traverser, lastAcceptRecord.getTargetState(), nextInputItem);
-
-								simpleUselessExtension = (shortcutState === nextState);
-							}
+							simpleUselessExtension = (shortcutState === nextState);
 						}
-
-						// If the new record would finish a useful extension
-						if (!simpleUselessExtension) {
-
-							// Create a new accept record
-							var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
-
-							// Add the new accept record to the tail derivatives
-							insertNewTailRecord(nextTailRecords, newAcceptRecord);
-						}
-
-						// Add a new missing record for a missing characters from accepted transported transition
-
-						// Save the transported transition to which current input item belongs
-						var transportedTransition = currentStateTransportedTransitions[nextStateAsString];
-
-						// If there are other possibilities to get to a required state except for the saved one
-						if (transportedTransition.length > 1) {
-
-							// Create accepted record for transported transition except for the accepted transition
-							var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord,
-								transportedTransition, nextInputItem, nextState);
-
-							// Add the new partially accepted record to the tail derivatives
-							insertNewTailRecord(nextTailRecords, newPartiallyMissingRecord);
-						}
-
 					}
 
-					// Add the new accepted records for all the accepted transitions
+					// If the new record would finish a useful extension
+					if (!simpleUselessExtension) {
 
-					// Save transported transition keys
-					var transportedTransitionsKeys = Object.keys(currentStateTransportedTransitions);
+						// Create a new accept record
+						var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
 
-					// Save transported transitions amount
-					var transportedTransitionsCount = transportedTransitionsKeys.length;
+						// Add the new accept record to the tail derivatives
+						insertNewTailRecord(traverser, nextTailRecords, newAcceptRecord);
+					}
 
-					// Iterate over transported transitions
-					for (var j = 0; j < transportedTransitionsCount; j++) {
+					// Add a new missing record for a missing characters from accepted transported transition
 
-						// Save current transported transition key
-						var currentTransportedTransitionKey = transportedTransitionsKeys[j];
+					// Save the transported transition to which current input item belongs
+					var transportedTransition = currentStateTransportedTransitions[nextStateAsString];
 
-						// If we are not dealing with a previously processed transported transition
-						if (currentTransportedTransitionKey !== nextStateAsString) {
+					// If there are other possibilities to get to a required state except for the saved one
+					if (transportedTransition.length > 1) {
 
-							// Save reference to the current transported transition
-							var currentTransportedTransition = currentStateTransportedTransitions[currentTransportedTransitionKey];
+						// Create accepted record for transported transition except for the accepted transition
+						var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord,
+							transportedTransition, nextInputItem, nextState);
 
-							// Save the current transported transition state
-							var currentTransportedTransitionState = parseInt(currentTransportedTransitionKey);
+						// Add the new partially accepted record to the tail derivatives
+						insertNewTailRecord(traverser, nextTailRecords, newPartiallyMissingRecord);
+					}
 
-							// Create accepted record for transported transition
-							var nextMissingRecord = createMissingRecord(tailRecord, currentTransportedTransition, currentTransportedTransitionState);
+				}
 
-							// Add the next accepted record to the tail derivatives
-							insertNewTailRecord(nextTailRecords, nextMissingRecord);
-						}
+				// Add the new accepted records for all the accepted transitions
+
+				// Save transported transition keys
+				var transportedTransitionsKeys = Object.keys(currentStateTransportedTransitions);
+
+				// Save transported transitions amount
+				var transportedTransitionsCount = transportedTransitionsKeys.length;
+
+				// Iterate over transported transitions
+				for (var j = 0; j < transportedTransitionsCount; j++) {
+
+					// Save current transported transition key
+					var currentTransportedTransitionKey = transportedTransitionsKeys[j];
+
+					// If we are not dealing with a previously processed transported transition
+					if (currentTransportedTransitionKey !== nextStateAsString) {
+
+						// Save reference to the current transported transition
+						var currentTransportedTransition = currentStateTransportedTransitions[currentTransportedTransitionKey];
+
+						// Save the current transported transition state
+						var currentTransportedTransitionState = parseInt(currentTransportedTransitionKey);
+
+						// Create accepted record for transported transition
+						var nextMissingRecord = createMissingRecord(tailRecord, currentTransportedTransition, currentTransportedTransitionState);
+
+						// Add the next accepted record to the tail derivatives
+						insertNewTailRecord(traverser, nextTailRecords, nextMissingRecord);
 					}
 				}
 			}

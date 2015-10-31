@@ -86,12 +86,12 @@ define(
 
 					while (currentBranch.getPreviousRecord() !== null) {
 
-						var alternatives = currentBranch.getAlternatives();
+						var alternativeRecords = currentBranch.getAlternativeRecords();
 
-						var alternativesCount = alternatives.length;
+						var alternativeRecordsCount = alternativeRecords.length;
 
-						for (var alternativeId = 0; alternativeId < alternativesCount; ++ alternativeId) {
-							var currentAlternative = alternatives[alternativeId];
+						for (var alternativeId = 0; alternativeId < alternativeRecordsCount; ++ alternativeId) {
+							var currentAlternative = alternativeRecords[alternativeId];
 							flatResults.push(currentFlatResult.slice());
 							branches.push(currentAlternative);
 						}
@@ -121,18 +121,18 @@ define(
 				branch1 = createMissingRecord(branch1, ['f'], 3);
 
 				// Push Branch 1
-				mainBranch.addAlternative(branch1);
+				mainBranch.addAlternativeRecord(branch1);
 				mainBranch = createAcceptRecord(mainBranch, 'm', 4);
 
 				var branch2 = createAcceptRecord(initialRecord, 'e', 7);
 				branch2 = createMissingRecord(branch2, ['p'], 8);
 				branch2 = createAcceptRecord(branch2, 'm', 9);
 				branch2 = createMissingRecord(branch2, ['e'], 4);
-				mainBranch.addAlternative(branch2);
+				mainBranch.addAlternativeRecord(branch2);
 
 				mainBranch = createAcceptRecord(mainBranch, 'x', 10);
 
-				console.log(restoreMergedResult(mainBranch));
+				// Check
 			});
 		});
 	}

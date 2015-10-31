@@ -48,7 +48,9 @@ define(
 
 			}
 
-			this.alternatives = [];
+			this.alternativeRecords = [];
+
+			this.alternative = false;
 		}
 
 		Record.prototype.getPreviousRecord = function () {
@@ -93,38 +95,42 @@ define(
 			return baseCandidate;
 		};
 
+		// Perform check going back from the checked record and similarly back from candidateRecord
+		// A "missing" character in candidate record means the extension is not useless
 		Record.prototype.isExtensionOf = function (baseCandidate) {
-			// Perform check going back from the checked record and similarly back from candidateRecord
-			// A "missing" character in candidate record means the extension is not useless
-			var extension = true;
+
+			var extensionCandidate = this;
 
 			var baseCandidateAncestor = baseCandidate;
 
-			var newerRecordAncestor = this;
+			var extensionCandidateAncestor = extensionCandidate;
 
-			while (baseCandidateAncestor !== newerRecordAncestor) {
+			// Loop until a common ancestor discovered
+			while (baseCandidateAncestor !== extensionCandidateAncestor) {
 
 				if ((baseCandidateAncestor === null) ||
-					(newerRecordAncestor === null) ||
-					(newerRecordAncestor.getTotalCount() < baseCandidateAncestor.getTotalCount())) {
+					(extensionCandidateAncestor === null) ||
+					(extensionCandidateAncestor.getTotalCount() < baseCandidateAncestor.getTotalCount())) {
 
 					if (baseCandidateAncestor === null) {
-						break;
+
+						// Extension was discovered
+						return true;
 					}
 
-					extension = false;
-
-					break;
+					// Alternative was discovered
+					return false;
 				}
 
-				if (newerRecordAncestor.isPartialOf(baseCandidateAncestor)) {
+				if (extensionCandidateAncestor.isPartialOf(baseCandidateAncestor)) {
 					baseCandidateAncestor = baseCandidateAncestor.getPreviousRecord();
 				}
 
-				newerRecordAncestor = newerRecordAncestor.getPreviousRecord();
+				extensionCandidateAncestor = extensionCandidateAncestor.getPreviousRecord();
 			}
 
-			return extension;
+			// Extension was discovered
+			return true;
 		};
 
 		Record.prototype.isPartialOf = function (anotherRecord) {
@@ -136,27 +142,23 @@ define(
 
 			var anotherCharactersCount = anotherCharacters.length;
 
-			var isPartial = true;
-
-			if ((charactersCount < (anotherCharactersCount - 1)) ||
-				(charactersCount > anotherCharactersCount)) {
-				isPartial = false;
+			// A record could be a partial only if it has less or equal amount of characters
+			if (charactersCount > anotherCharactersCount) {
+				return false;
 			}
 
 			var missesCount = 0;
 
-			if (isPartial) {
-				for (var characterId = 0; characterId < charactersCount; ++ characterId) {
-					if (characters[characterId] !== anotherCharacters[characterId + missesCount]) {
-						++ missesCount;
-						if ((missesCount === 1) && (charactersCount === 1) || (missesCount > 1)) {
-							isPartial = false;
-						}
+			for (var characterId = 0; characterId < charactersCount; ++ characterId) {
+				if (characters[characterId] !== anotherCharacters[characterId + missesCount]) {
+					++missesCount;
+					if ((missesCount === 1) && (charactersCount === 1) || (missesCount > 1)) {
+						return false;
 					}
 				}
 			}
 
-			return isPartial;
+			return true;
 		};
 
 		Record.prototype.charactersEqual = function (anotherRecord) {
@@ -222,12 +224,20 @@ define(
 			return hasLoops;
 		};
 
-		Record.prototype.addAlternative = function (alternative) {
-			this.alternatives.push(alternative);
+		Record.prototype.addAlternativeRecord = function (alternative) {
+			this.alternativeRecords.push(alternative);
 		};
 
-		Record.prototype.getAlternatives = function () {
-			return this.alternatives;
+		Record.prototype.getAlternativeRecords = function () {
+			return this.alternativeRecords;
+		};
+
+		Record.prototype.getAlternative = function () {
+			return this.alternative;
+		};
+
+		Record.prototype.setAlternative = function (alternative) {
+			this.alternative = alternative;
 		};
 
 		return Record;
