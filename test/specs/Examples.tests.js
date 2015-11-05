@@ -44,10 +44,7 @@ define(
 					case 'test':
 
 						// Generate a simple test NFA
-						nfa.setStatesCount(2);
-						nfa.setInitialStates([0]);
-						nfa.setFinalStates([1]);
-						nfa.addTransition(0, 1, ast[1]);
+						nfa = Automaton.char(ast[1]);
 
 						break;
 

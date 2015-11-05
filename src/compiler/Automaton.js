@@ -112,6 +112,22 @@ define(
 		};
 
 		/**
+		 * Create a single-transition automaton.
+		 *
+		 * @param character
+		 */
+		Automaton.char = function (character) {
+			var result = new Automaton();
+
+			result.setStatesCount(2);
+			result.setInitialStates([0]);
+			result.setFinalStates([1]);
+			result.addTransition(0, 1, character);
+
+			return result;
+		};
+
+		/**
 		 * Concatenate two automata.
 		 *
 		 * @param leftAutomaton
