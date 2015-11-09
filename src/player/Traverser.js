@@ -1,5 +1,10 @@
 /**
  * Created by danek_000 on 30.8.2015.
+ *
+ *   .::::::::..          ..::::::::.
+ * 	:::::::::::::        :::::::::::::
+ * :::::::::::' .\      /. `:::::::::::
+ * `::::::::::_,__o    o__,_::::::::::'
  */
 define(
 	[
@@ -411,79 +416,6 @@ define(
 		}
 
 		/**
-		 * Check if a currently processed record is a useful alternative of some other record
-		 *
-		 * @param traverser				// Functional-style "this" reference
-		 * @param tailRecords	// Array of currently processed tail records
-		 * @param testedRecord
-		 * @param testedRecordInsertionIndex
-		 * @returns {boolean}
-		 */
-		function isAnAlternative (traverser, tailRecords, testedRecord, testedRecordInsertionIndex) {
-
-			var finalRecords = getFinalRecords(traverser);
-
-			var finalRecordsCount = finalRecords.length;
-
-			var baseCandidate = null;
-
-			var uselesslyExtends = false;
-
-			// Check final records
-			for (var finalRecordId = 0; finalRecordId < finalRecordsCount; ++ finalRecordId) {
-				var currentFinalRecord = finalRecords[finalRecordId];
-
-				baseCandidate = testedRecord.findBaseCandidate(currentFinalRecord);
-
-				uselesslyExtends = ((baseCandidate !== null) && testedRecord.isExtensionOf(baseCandidate));
-
-				if ((currentFinalRecord !== testedRecord) && uselesslyExtends) {
-					// Is an alternative of an existing final record
-					return false;
-				}
-			}
-
-			for (var currentTailRecordId = 0; currentTailRecordId < testedRecordInsertionIndex; ++ currentTailRecordId) {
-				var currentTailRecord = tailRecords[currentTailRecordId];
-
-				baseCandidate = testedRecord.findBaseCandidate(currentTailRecord);
-
-				uselesslyExtends = ((baseCandidate !== null) && testedRecord.isExtensionOf(baseCandidate));
-
-				if ((currentTailRecord !== testedRecord) && uselesslyExtends) {
-					// Is an alternative of an existing tail record
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		/**
-		 * Check if a record is useful for the answer
-		 *
-		 * @param traverser
-		 * @param tailRecords
-		 * @param testedRecord
-		 * @param testedRecordInsertionIndex
-		 * @returns {boolean}
-		 */
-		function usefulRecord (traverser, tailRecords, testedRecord, testedRecordInsertionIndex) {
-
-			// Check for loops
-			var loopFree = !testedRecord.hasLoops();
-
-			// Check if useful extension
-			var usefulExtension = false;
-
-			if (loopFree) {
-				usefulExtension = isAnAlternative(traverser, tailRecords, testedRecord, testedRecordInsertionIndex);
-			}
-
-			return (loopFree && usefulExtension);
-		}
-
-		/**
 		 * From original Whynot
 		 * Find proper position to insert a new record
 		 * @param currentTails
@@ -511,12 +443,67 @@ define(
 			return low;
 		}
 
+		/**
+		 * Insert a newly generated tail record to the latest tail records level
+		 * 
+		 * @param traverser
+		 * @param tailRecords
+		 * @param newTailRecord
+		 */
 		function insertNewTailRecord (traverser, tailRecords, newTailRecord) {
 			var insertionIndex = findInsertionIndex(tailRecords, newTailRecord.getMissingCount());
 
-			var useful = usefulRecord(traverser, tailRecords, newTailRecord, insertionIndex);
+			// Check for loops
+			var loopFree = !newTailRecord.hasLoops();
 
-			if (useful) {
+			var isAlternative = true;
+
+			if (loopFree) {
+				// TODO: consider mixing the method with insertNewTailRecord
+
+				var finalRecords = getFinalRecords(traverser);
+
+				var finalRecordsCount = finalRecords.length;
+
+				var baseCandidate = null;
+
+				// Check final records
+				for (var finalRecordId = 0; finalRecordId < finalRecordsCount; ++ finalRecordId) {
+					var currentFinalRecord = finalRecords[finalRecordId];
+
+					baseCandidate = newTailRecord.findBaseCandidate(currentFinalRecord);
+
+					if ((currentFinalRecord !== newTailRecord) &&
+						((baseCandidate !== null) &&
+						newTailRecord.isExtensionOf(baseCandidate))) {
+
+						// Is an extension of an existing final record
+						isAlternative = false;
+
+						break;
+					}
+				}
+
+				if (isAlternative) {
+					for (var currentTailRecordId = 0; currentTailRecordId < insertionIndex; ++ currentTailRecordId) {
+						var currentTailRecord = tailRecords[currentTailRecordId];
+
+						baseCandidate = newTailRecord.findBaseCandidate(currentTailRecord);
+
+						if ((currentTailRecord !== newTailRecord) &&
+							((baseCandidate !== null) &&
+							newTailRecord.isExtensionOf(baseCandidate))) {
+
+							// Is an extension of an existing tail record
+							isAlternative = false;
+
+							break;
+						}
+					}
+				}
+			}
+
+			if (loopFree && isAlternative) {
 				tailRecords.splice(insertionIndex, 0, newTailRecord);
 			}
 		}
@@ -562,34 +549,11 @@ define(
 
 					// Add a new accept record for the accepted transition
 
-					// Only if not finishing an extra expansion
-					var simpleUselessExtension = false;
+					// Create a new accept record
+					var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
 
-					// If currently processed record is failing
-					if (!tailRecord.getAccepted()) {
-
-						// Save last accept record for reference
-						var lastAcceptRecord = tailRecord.getLastAcceptRecord();
-
-						// If there was at least one accept record earlier
-						if (lastAcceptRecord !== null) {
-
-							// Calculate the possible shortcut state
-							var shortcutState = getNextState(traverser, lastAcceptRecord.getTargetState(), nextInputItem);
-
-							simpleUselessExtension = (shortcutState === nextState);
-						}
-					}
-
-					// If the new record would finish a useful extension
-					if (!simpleUselessExtension) {
-
-						// Create a new accept record
-						var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
-
-						// Add the new accept record to the tail derivatives
-						insertNewTailRecord(traverser, nextTailRecords, newAcceptRecord);
-					}
+					// Add the new accept record to the tail derivatives
+					insertNewTailRecord(traverser, nextTailRecords, newAcceptRecord);
 
 					// Add a new missing record for a missing characters from accepted transported transition
 
@@ -673,7 +637,7 @@ define(
 		}
 
 		/**
-		 * Execute the traverser to get all the possible additions without loop repetitions.
+		 * Execute the traverser to get all the possible unique minimal input completions without loop repetitions.
 		 *
 		 * @param input
 		 * @returns {Array}
@@ -689,7 +653,7 @@ define(
 			// Define the tail records
 			var tailRecords = [initialRecord];
 
-			// Loop over generations of tail records
+			// Loop over all the possible strings accepted by the language
 			while (tailRecords.length > 0) {
 
 				// Execute the tailRecords

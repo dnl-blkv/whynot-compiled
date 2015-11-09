@@ -1,5 +1,10 @@
 /**
  * Created by danek_000 on 30.8.2015.
+ *
+ *   .::::::::..          ..::::::::.
+ *	:::::::::::::        :::::::::::::
+ * :::::::::::' .\      /. `:::::::::::
+ * `::::::::::_,__o    o__,_::::::::::'
  */
 define(
 	['./util/arrayUtils'],
@@ -9,7 +14,7 @@ define(
 		function Record (previousRecord, targetState, characters, accepted) {
 
 			// Define previous record pointer
-			this.previousRecord = previousRecord || null;
+			this.previousRecords = [previousRecord];
 
 			// Define target state
 			this.targetState = targetState || 0;
@@ -30,20 +35,20 @@ define(
 			this.lastAcceptedRecord = this;
 
 			// If the previous record is defined
-			if (this.previousRecord !== null) {
+			if (this.getPreviousRecord() !== null) {
 
 				// Copy the accepted count
-				this.missingCount = this.previousRecord.getMissingCount();
+				this.missingCount = this.getPreviousRecord().getMissingCount();
 
 				// Copy the accepted count
-				this.acceptedCount = this.previousRecord.getAcceptedCount();
+				this.acceptedCount = this.getPreviousRecord().getAcceptedCount();
 
 				// Increase the corresponding counter
 				if (this.accepted) {
 					++ this.acceptedCount;
 				} else {
 					++ this.missingCount;
-					this.lastAcceptedRecord = this.previousRecord.lastAcceptedRecord;
+					this.lastAcceptedRecord = this.getPreviousRecord().lastAcceptedRecord;
 				}
 
 			}
@@ -54,7 +59,7 @@ define(
 		}
 
 		Record.prototype.getPreviousRecord = function () {
-			return this.previousRecord;
+			return this.previousRecords[0];
 		};
 
 		Record.prototype.getLastAcceptRecord = function () {
@@ -186,7 +191,7 @@ define(
 		};
 
 		Record.prototype.isHead = function () {
-			return this.previousRecord === null;
+			return this.getPreviousRecord() === null;
 		};
 
 		Record.prototype.hasLoops = function () {
