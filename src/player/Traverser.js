@@ -181,19 +181,6 @@ define(
 
 			// Create an initial record
 			var initialRecord = createInitialRecord(traverser);
-
-			// Update tail records
-			updateTailRecords(traverser, [initialRecord]);
-		}
-
-		/**
-		 * Replace old tail records with new tail records.
-		 *
-		 * @param traverser
-		 * @param newTailRecords
-		 */
-		function updateTailRecords (traverser, newTailRecords) {
-			traverser.tailRecords = newTailRecords;
 		}
 
 		/**
@@ -240,7 +227,7 @@ define(
 				takes part in cutting off the useless extensions when those are discovered at the very beginning of the input.
 			 */
 			return new Record(
-				null,
+				[],
 				traverser.initialState,
 				[''],
 				true
@@ -250,16 +237,16 @@ define(
 		/**
 		 * Create and return a new accept record.
 		 *
-		 * @param previousRecord
+		 * @param previousRecords
 		 * @param character
 		 * @param targetState
 		 * @returns {Record}
 		 */
-		function createAcceptRecord (previousRecord, character, targetState) {
+		function createAcceptRecord (previousRecords, character, targetState) {
 
 			// Return the new accept record
 			return new Record (
-				previousRecord,
+				previousRecords,
 				targetState,
 				[character],
 				true
@@ -269,16 +256,16 @@ define(
 		/**
 		 * Create and return a new accepted record.
 		 *
-		 * @param previousRecord
+		 * @param previousRecords
 		 * @param characters
 		 * @param targetState
 		 * @returns {Record}
 		 */
-		function createMissingRecord (previousRecord, characters, targetState) {
+		function createMissingRecord (previousRecords, characters, targetState) {
 
 			// Return the new accepted record
 			return new Record (
-				previousRecord,
+				previousRecords,
 				targetState,
 				characters,
 				false
@@ -289,13 +276,13 @@ define(
 		/**
 		 * Create a partially accepted record.
 		 *
-		 * @param previousRecord
+		 * @param previousRecords
 		 * @param characters
 		 * @param excludedCharacter
 		 * @param targetState
 		 * @returns {Record}
 		 */
-		function createPartiallyMissingRecord (previousRecord, characters, excludedCharacter, targetState) {
+		function createPartiallyMissingRecord (previousRecords, characters, excludedCharacter, targetState) {
 
 			// Save the next state index in the current transported transition
 			var excludedCharacterIndex = characters.indexOf(excludedCharacter);
@@ -308,7 +295,7 @@ define(
 
 			// Return the new accepted record
 			return createMissingRecord(
-				previousRecord,
+				previousRecords,
 				partialCharacters,
 				targetState
 			);
@@ -445,21 +432,23 @@ define(
 
 		/**
 		 * Insert a newly generated tail record to the latest tail records level
-		 * 
+		 *
 		 * @param traverser
 		 * @param tailRecords
 		 * @param newTailRecord
 		 */
 		function insertNewTailRecord (traverser, tailRecords, newTailRecord) {
+
+			// Find a proper insertion index for the new record
 			var insertionIndex = findInsertionIndex(tailRecords, newTailRecord.getMissingCount());
 
 			// Check for loops
 			var loopFree = !newTailRecord.hasLoops();
 
+			// Assume by default the new record is an alternative to some of the existing records
 			var isAlternative = true;
 
 			if (loopFree) {
-				// TODO: consider mixing the method with insertNewTailRecord
 
 				var finalRecords = getFinalRecords(traverser);
 
@@ -471,16 +460,18 @@ define(
 				for (var finalRecordId = 0; finalRecordId < finalRecordsCount; ++ finalRecordId) {
 					var currentFinalRecord = finalRecords[finalRecordId];
 
-					baseCandidate = newTailRecord.findBaseCandidate(currentFinalRecord);
+					if (currentFinalRecord !== newTailRecord) {
+						baseCandidate = newTailRecord.findBaseCandidate(currentFinalRecord);
 
-					if ((currentFinalRecord !== newTailRecord) &&
-						((baseCandidate !== null) &&
-						newTailRecord.isExtensionOf(baseCandidate))) {
+						if (baseCandidate !== null) {
+							if (newTailRecord.getExtensionsProfiles(baseCandidate)[0].isExtension) {
 
-						// Is an extension of an existing final record
-						isAlternative = false;
+								// Is an extension of an existing final record
+								isAlternative = false;
 
-						break;
+								break;
+							}
+						}
 					}
 				}
 
@@ -488,16 +479,18 @@ define(
 					for (var currentTailRecordId = 0; currentTailRecordId < insertionIndex; ++ currentTailRecordId) {
 						var currentTailRecord = tailRecords[currentTailRecordId];
 
-						baseCandidate = newTailRecord.findBaseCandidate(currentTailRecord);
+						if (currentTailRecord !== newTailRecord) {
+							baseCandidate = newTailRecord.findBaseCandidate(currentTailRecord);
 
-						if ((currentTailRecord !== newTailRecord) &&
-							((baseCandidate !== null) &&
-							newTailRecord.isExtensionOf(baseCandidate))) {
+							if (baseCandidate !== null) {
+								if (newTailRecord.getExtensionsProfiles(baseCandidate)) {
 
-							// Is an extension of an existing tail record
-							isAlternative = false;
+									// Is an extension of an existing final record
+									isAlternative = false;
 
-							break;
+									break;
+								}
+							}
 						}
 					}
 				}
@@ -550,7 +543,7 @@ define(
 					// Add a new accept record for the accepted transition
 
 					// Create a new accept record
-					var newAcceptRecord = createAcceptRecord(tailRecord, nextInputItem, nextState);
+					var newAcceptRecord = createAcceptRecord([tailRecord], nextInputItem, nextState);
 
 					// Add the new accept record to the tail derivatives
 					insertNewTailRecord(traverser, nextTailRecords, newAcceptRecord);
@@ -564,7 +557,7 @@ define(
 					if (transportedTransition.length > 1) {
 
 						// Create accepted record for transported transition except for the accepted transition
-						var newPartiallyMissingRecord = createPartiallyMissingRecord(tailRecord,
+						var newPartiallyMissingRecord = createPartiallyMissingRecord([tailRecord],
 							transportedTransition, nextInputItem, nextState);
 
 						// Add the new partially accepted record to the tail derivatives
@@ -597,7 +590,7 @@ define(
 						var currentTransportedTransitionState = parseInt(currentTransportedTransitionKey);
 
 						// Create accepted record for transported transition
-						var nextMissingRecord = createMissingRecord(tailRecord, currentTransportedTransition, currentTransportedTransitionState);
+						var nextMissingRecord = createMissingRecord([tailRecord], currentTransportedTransition, currentTransportedTransitionState);
 
 						// Add the next accepted record to the tail derivatives
 						insertNewTailRecord(traverser, nextTailRecords, nextMissingRecord);

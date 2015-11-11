@@ -125,7 +125,7 @@ define(
 
 						reverseResults.unshift([currentRecord.getAccepted(), currentRecord.getCharacters(), addPosition]);
 
-						currentRecord = currentRecord.getPreviousRecord();
+						currentRecord = currentRecord.getFirstPreviousRecord();
 					}
 
 					var reverseResultsCount = reverseResults.length;
@@ -158,7 +158,7 @@ define(
 					verticalChoicesArray.unshift(currentRecord.characters);
 
 					// Go to the previous record
-					currentRecord = currentRecord.getPreviousRecord();
+					currentRecord = currentRecord.getFirstPreviousRecord();
 				}
 
 				// Return the resulting array of char choices for each step
@@ -261,48 +261,34 @@ define(
 			function restoreMergedResult (result) {
 				var flatResults = [[]];
 
+				var currentFlatResult = flatResults[0];
+
 				var branchId = 0;
 
 				var branches = [result];
 
-				var currentBranch = branches[0];
-
-				var currentFlatResult = flatResults[0];
-
-				var branchHistory = [];
-
-				var i = 0;
+				var currentBranch = result;
 
 				while (branchId < branches.length) {
 					currentBranch = branches[branchId];
 
-					if (branchHistory.indexOf(currentBranch) > -1) {
-						console.log('DUPLICATE: ', branchHistory.indexOf(currentBranch), currentBranch);
-						++ i;
-						if (i > 0) {
-							break;
-						}
-					}
-
-					branchHistory.push(currentBranch);
-
 					currentFlatResult = flatResults[branchId];
 
-					while (currentBranch.getPreviousRecord() !== null) {
+					while (currentBranch.getPreviousRecords().length > 0) {
 
-						var alternativeRecords = currentBranch.getAlternativeRecords();
-
-						var alternativeRecordsCount = alternativeRecords.length;
-
-						for (var alternativeId = 0; alternativeId < alternativeRecordsCount; ++ alternativeId) {
-							var currentAlternative = alternativeRecords[alternativeId];
-							flatResults.push(currentFlatResult.slice());
-							branches.push(currentAlternative);
-						}
+						var previousRecords = currentBranch.getPreviousRecords();
 
 						currentFlatResult.push(currentBranch.getCharacters());
 
-						currentBranch = currentBranch.getPreviousRecord();
+						currentBranch = previousRecords[0];
+
+						var previousRecordsCount = previousRecords.length;
+
+						for (var previousRecordId = 1; previousRecordId < previousRecordsCount; ++ previousRecordId) {
+							var previousRecord = previousRecords[previousRecordId];
+							flatResults.push(currentFlatResult.slice());
+							branches.push(previousRecord);
+						}
 					}
 
 					++ branchId;
@@ -333,7 +319,7 @@ define(
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('(a|(bc)|(pbcx))d(e|f)');
 
-					console.log(restoreMergedResult(traverser.execute(createInput('d'))[0]));
+					console.log(traverser.execute(createInput('d')));
 
 					//chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
 					//	[['a'], ['d'], ['e', 'f']]
@@ -398,25 +384,25 @@ define(
 				//	chai.expect(flattenResults(results)).to.deep.equal(['abab']);
 				//});
 				//
-				it('can complete a real-life-like case with star-height of 2', function () {
-					// Check for partially matching result
-					var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
-
-					var inputString = 'cbcbfcbcbecbcbfcbcbe';
-
-					console.log(traverser);
-
-					console.time('star-height-2-single');
-					var results = traverser.execute(createInput(inputString));
-					console.timeEnd('star-height-2-single');
-
-					//console.log(restoreMergedResult(results[0]));
-					console.log(results);
-
-					console.log('Regex: a((e(b|c|d)*)|(g(b|c|f)*))*h');
-					console.log('Input: ' + inputString);
-					console.log(flattenResults(results));
-				});
+				//it('can complete a real-life-like case with star-height of 2', function () {
+				//	// Check for partially matching result
+				//	var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
+				//
+				//	var inputString = 'cbcbfcbcbecbcbfcbcbe';
+				//
+				//	console.log(traverser);
+				//
+				//	console.time('star-height-2-single');
+				//	var results = traverser.execute(createInput(inputString));
+				//	console.timeEnd('star-height-2-single');
+				//
+				//	//console.log(restoreMergedResult(results[0]));
+				//	console.log(results);
+				//
+				//	console.log('Regex: a((e(b|c|d)*)|(g(b|c|f)*))*h');
+				//	console.log('Input: ' + inputString);
+				//	console.log(flattenResults(results));
+				//});
 
 				//it('can run faster than wind with a real-life-like case with star-height of 2', function () {
 				//	// Check for partially matching result
