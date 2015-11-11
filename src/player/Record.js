@@ -207,7 +207,8 @@ define(
 				{
 					'descendant': null,
 					'head': this,
-					'isExtension': true
+					'isExtension': true,
+					'parentBranchId': -1
 				}
 			];
 
@@ -302,7 +303,8 @@ define(
 								{
 									'descendant': currentExtensionCandidate,
 									'head': previousExtensionCandidate,
-									'isExtension': true
+									'isExtension': true,
+									'parentBranchId': extensionCandidatesProfileId
 								}
 							);
 						}
