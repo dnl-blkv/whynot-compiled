@@ -14,7 +14,7 @@ define(
 		function Record (previousRecord, targetState, characters, accepted) {
 
 			// Define previous record pointer
-			this.previousRecords = [previousRecord];
+			this.previousRecord = previousRecord;
 
 			// Define target state
 			this.targetState = targetState || 0;
@@ -52,18 +52,10 @@ define(
 				}
 
 			}
-
-			this.alternativeRecords = [];
-
-			this.alternative = false;
 		}
 
 		Record.prototype.getPreviousRecord = function () {
-			return this.previousRecords[0];
-		};
-
-		Record.prototype.getLastAcceptRecord = function () {
-			return this.lastAcceptedRecord;
+			return this.previousRecord;
 		};
 
 		Record.prototype.getCharacters = function () {
@@ -166,33 +158,6 @@ define(
 			return true;
 		};
 
-		Record.prototype.charactersEqual = function (anotherRecord) {
-			return this.getCharacters().equals(anotherRecord.getCharacters());
-		};
-
-		Record.prototype.getAccepted = function () {
-			return this.accepted;
-		};
-
-		Record.prototype.getTargetState = function () {
-			return this.targetState;
-		};
-
-		Record.prototype.getMissingCount = function () {
-			return this.missingCount;
-		};
-
-		Record.prototype.getAcceptedCount = function () {
-			return this.acceptedCount;
-		};
-
-		Record.prototype.getTotalCount = function () {
-			return this.getAcceptedCount() + this.getMissingCount();
-		};
-
-		Record.prototype.isHead = function () {
-			return this.getPreviousRecord() === null;
-		};
 
 		Record.prototype.hasLoops = function () {
 
@@ -229,20 +194,28 @@ define(
 			return hasLoops;
 		};
 
-		Record.prototype.addAlternativeRecord = function (alternative) {
-			this.alternativeRecords.push(alternative);
+		Record.prototype.getAccepted = function () {
+			return this.accepted;
 		};
 
-		Record.prototype.getAlternativeRecords = function () {
-			return this.alternativeRecords;
+		Record.prototype.getTargetState = function () {
+			return this.targetState;
 		};
 
-		Record.prototype.getAlternative = function () {
-			return this.alternative;
+		Record.prototype.getMissingCount = function () {
+			return this.missingCount;
 		};
 
-		Record.prototype.setAlternative = function (alternative) {
-			this.alternative = alternative;
+		Record.prototype.getAcceptedCount = function () {
+			return this.acceptedCount;
+		};
+
+		Record.prototype.getTotalCount = function () {
+			return this.getAcceptedCount() + this.getMissingCount();
+		};
+
+		Record.prototype.isHead = function () {
+			return this.getPreviousRecord() === null;
 		};
 
 		return Record;

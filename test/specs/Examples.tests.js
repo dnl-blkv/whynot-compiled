@@ -258,59 +258,6 @@ define(
 				return processedResults;
 			}
 
-			function restoreMergedResult (result) {
-				var flatResults = [[]];
-
-				var branchId = 0;
-
-				var branches = [result];
-
-				var currentBranch = branches[0];
-
-				var currentFlatResult = flatResults[0];
-
-				var branchHistory = [];
-
-				var i = 0;
-
-				while (branchId < branches.length) {
-					currentBranch = branches[branchId];
-
-					if (branchHistory.indexOf(currentBranch) > -1) {
-						console.log('DUPLICATE: ', branchHistory.indexOf(currentBranch), currentBranch);
-						++ i;
-						if (i > 0) {
-							break;
-						}
-					}
-
-					branchHistory.push(currentBranch);
-
-					currentFlatResult = flatResults[branchId];
-
-					while (currentBranch.getPreviousRecord() !== null) {
-
-						var alternativeRecords = currentBranch.getAlternativeRecords();
-
-						var alternativeRecordsCount = alternativeRecords.length;
-
-						for (var alternativeId = 0; alternativeId < alternativeRecordsCount; ++ alternativeId) {
-							var currentAlternative = alternativeRecords[alternativeId];
-							flatResults.push(currentFlatResult.slice());
-							branches.push(currentAlternative);
-						}
-
-						currentFlatResult.push(currentBranch.getCharacters());
-
-						currentBranch = currentBranch.getPreviousRecord();
-					}
-
-					++ branchId;
-				}
-
-				return flatResults;
-			}
-
 			// Testing with regular expressions
 			// Currently regular expressions converter supports the following elements:
 			// '(' and ')' for grouping
@@ -333,7 +280,7 @@ define(
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('(a|(bc)|(pbcx))d(e|f)');
 
-					console.log(restoreMergedResult(traverser.execute(createInput('d'))[0]));
+					console.log(traverser.execute(createInput('d'))[0]);
 
 					//chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
 					//	[['a'], ['d'], ['e', 'f']]
@@ -410,7 +357,6 @@ define(
 					var results = traverser.execute(createInput(inputString));
 					console.timeEnd('star-height-2-single');
 
-					//console.log(restoreMergedResult(results[0]));
 					console.log(results);
 
 					console.log('Regex: a((e(b|c|d)*)|(g(b|c|f)*))*h');
