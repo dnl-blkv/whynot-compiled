@@ -47,7 +47,7 @@ define(
 		}
 
 		describe('Records', function() {
-			it('can properly detect loops in records', function () {
+			it('can detect loops in records', function () {
 				var loopingRecord = createInitialRecord();
 
 				loopingRecord = createMissingRecord(loopingRecord, ['a'], 1);
