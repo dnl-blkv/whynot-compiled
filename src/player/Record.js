@@ -31,9 +31,6 @@ define(
 			// Define accepted characters counter
 			this.acceptedCount = 0;
 
-			// Define the last accepted counter
-			this.lastAcceptedRecord = this;
-
 			// If the previous record is defined
 			if (this.getPreviousRecord() !== null) {
 
@@ -44,13 +41,7 @@ define(
 				this.acceptedCount = this.getPreviousRecord().getAcceptedCount();
 
 				// Increase the corresponding counter
-				if (this.accepted) {
-					++ this.acceptedCount;
-				} else {
-					++ this.missingCount;
-					this.lastAcceptedRecord = this.getPreviousRecord().lastAcceptedRecord;
-				}
-
+				this.accepted ? ++ this.acceptedCount : ++ this.missingCount;
 			}
 		}
 
@@ -62,45 +53,13 @@ define(
 			return this.characters;
 		};
 
-		/**
-		 * Find a possible base for which this records serves an extension in ancestors chain of another record.
-		 *
-		 * @param olderRecord
-		 * @returns {*}
-		 */
-		Record.prototype.findBaseCandidate = function (olderRecord) {
-			var baseCandidate = olderRecord;
-
-			var baseCandidateFound = false;
-
-			while ((baseCandidate !== null) &&
-			(this.getAcceptedCount() <= baseCandidate.getAcceptedCount())) {
-
-				if ((baseCandidate.getAcceptedCount() === this.getAcceptedCount()) &&
-					(baseCandidate.getTargetState() === this.getTargetState())) {
-					baseCandidateFound = true;
-					break;
-				}
-
-				baseCandidate = baseCandidate.getPreviousRecord();
-			}
-
-			if (!baseCandidateFound) {
-				baseCandidate = null;
-			}
-
-			return baseCandidate;
-		};
-
 		// Perform check going back from the checked record and similarly back from candidateRecord
 		// A "missing" character in candidate record means the extension is not useless
 		Record.prototype.isExtensionOf = function (baseCandidate) {
 
-			var extensionCandidate = this;
-
 			var baseCandidateAncestor = baseCandidate;
 
-			var extensionCandidateAncestor = extensionCandidate;
+			var extensionCandidateAncestor = this;
 
 			// Loop until a common ancestor discovered
 			while (baseCandidateAncestor !== extensionCandidateAncestor) {
@@ -157,7 +116,6 @@ define(
 
 			return true;
 		};
-
 
 		Record.prototype.hasLoops = function () {
 

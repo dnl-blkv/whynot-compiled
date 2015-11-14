@@ -352,9 +352,9 @@ define(
 		/**
 		 * From original Whynot
 		 * Find proper position to insert a new record
+		 *
 		 * @param currentTails
-		 * @param tailRecord
-		 * @param comparisonMethod
+		 * @param missingCount
 		 * @returns {number}
 		 */
 		function findInsertionIndex (currentTails, missingCount) {
@@ -381,10 +381,8 @@ define(
 		/**
 		 * Insert a newly generated tail record to the latest tail records level
 		 *
-		 * @param traverser
 		 * @param tailRecords
 		 * @param newTailRecord
-		 * @param inputItem
 		 */
 		function insertNewTailRecord (tailRecords, newTailRecord) {
 
@@ -393,16 +391,16 @@ define(
 			tailRecords.splice(insertionIndex, 0, newTailRecord);
 		}
 
-		function insertNewRecord (records, newRecord) {
+		function insertNewRecord (records, recordsIndex, newRecord) {
 
 			var isAlternative = true;
 
-			for (var currentRecordId = 0; currentRecordId < records.length; ++ currentRecordId) {
-				var currentRecord = records[currentRecordId];
+			var recordsIndexLine = recordsIndex[newRecord.getTargetState()];
 
-				if ((currentRecord.getTargetState() === newRecord.getTargetState()) &&
-					(newRecord.isExtensionOf(currentRecord))) {
+			for (var currentRecordId = 0; currentRecordId < recordsIndexLine.length; ++ currentRecordId) {
+				var currentRecord = recordsIndexLine[currentRecordId];
 
+				if (newRecord.isExtensionOf(currentRecord)) {
 					// Is an extension of an existing tail record
 					isAlternative = false;
 
@@ -414,6 +412,7 @@ define(
 			// ALSO check for EXTENSIONS
 			if ((isAlternative) && (!newRecord.hasLoops())) {
 				records.push(newRecord);
+				recordsIndexLine.push(newRecord);
 			}
 		}
 
@@ -432,6 +431,20 @@ define(
 
 			// Create the array for this generation's records
 			var records = tailRecords.slice();
+
+			// Create the records index
+			var recordsIndex = [];
+
+			for (var currentRecordsIndexLine = 0; currentRecordsIndexLine < traverser.transitions.length; ++ currentRecordsIndexLine) {
+				recordsIndex[currentRecordsIndexLine] = [];
+			}
+
+			for (var currentTailRecordId = 0; currentTailRecordId < tailRecords.length; ++ currentTailRecordId) {
+
+				var currentTailRecord = tailRecords[currentTailRecordId];
+
+				recordsIndex[currentTailRecord.getTargetState()].push(currentTailRecord);
+			}
 
 			// Create the counter to iterate the missing tails array
 			var currentRecordId = 0;
@@ -481,7 +494,7 @@ define(
 								transportedTransitions, inputItem, nextState);
 
 							// Add the new partially accepted record to the missing records array, only check for loops
-							insertNewRecord(records, newPartiallyMissingRecord);
+							insertNewRecord(records, recordsIndex, newPartiallyMissingRecord);
 						}
 					}
 
@@ -512,7 +525,7 @@ define(
 							var nextMissingRecord = createMissingRecord(currentRecord, currentTransportedTransition, currentTransportedTransitionState);
 
 							// Add the new partially accepted record to the missing records array, only check for loops
-							insertNewRecord(records, nextMissingRecord);
+							insertNewRecord(records, recordsIndex, nextMissingRecord);
 						}
 					}
 				}
