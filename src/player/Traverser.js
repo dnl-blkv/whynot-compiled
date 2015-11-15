@@ -240,7 +240,7 @@ define(
 				takes part in cutting off the useless extensions when those are discovered at the very beginning of the input.
 			 */
 			return new Record(
-				null,
+				[],
 				traverser.initialState,
 				[''],
 				true
@@ -250,16 +250,16 @@ define(
 		/**
 		 * Create and return a new accept record.
 		 *
-		 * @param previousRecord
+		 * @param previousRecords
 		 * @param character
 		 * @param targetState
 		 * @returns {Record}
 		 */
-		function createAcceptRecord (previousRecord, character, targetState) {
+		function createAcceptRecord (previousRecords, character, targetState) {
 
 			// Return the new accept record
 			return new Record (
-				previousRecord,
+				previousRecords,
 				targetState,
 				[character],
 				true
@@ -269,16 +269,16 @@ define(
 		/**
 		 * Create and return a new accepted record.
 		 *
-		 * @param previousRecord
+		 * @param previousRecords
 		 * @param characters
 		 * @param targetState
 		 * @returns {Record}
 		 */
-		function createMissingRecord (previousRecord, characters, targetState) {
+		function createMissingRecord (previousRecords, characters, targetState) {
 
 			// Return the new accepted record
 			return new Record (
-				previousRecord,
+				previousRecords,
 				targetState,
 				characters,
 				false
@@ -289,13 +289,13 @@ define(
 		/**
 		 * Create a partially accepted record.
 		 *
-		 * @param previousRecord
+		 * @param previousRecords
 		 * @param characters
 		 * @param excludedCharacter
 		 * @param targetState
 		 * @returns {Record}
 		 */
-		function createPartiallyMissingRecord (previousRecord, characters, excludedCharacter, targetState) {
+		function createPartiallyMissingRecord (previousRecords, characters, excludedCharacter, targetState) {
 
 			// Save the next state index in the current transported transition
 			var excludedCharacterIndex = characters.indexOf(excludedCharacter);
@@ -308,7 +308,7 @@ define(
 
 			// Return the new accepted record
 			return createMissingRecord(
-				previousRecord,
+				previousRecords,
 				partialCharacters,
 				targetState
 			);
@@ -382,13 +382,21 @@ define(
 		 * Insert a newly generated tail record to the latest tail records level
 		 *
 		 * @param tailRecords
+		 * @param recordsIndex
 		 * @param newTailRecord
 		 */
-		function insertNewTailRecord (tailRecords, newTailRecord) {
+		function insertNewTailRecord (tailRecords, recordsIndex, newTailRecord) {
 
 			var insertionIndex = findInsertionIndex(tailRecords, newTailRecord.getMissingCount());
 
 			tailRecords.splice(insertionIndex, 0, newTailRecord);
+
+			// Add the new record as "next" for its previous records
+			var previousState = newTailRecord.getPreviousRecord().getTargetState();
+
+			var previousIndexRecordsLine = recordsIndex[previousState];
+
+			previousIndexRecordsLine.nextRecords.push(newTailRecord);
 		}
 
 		function insertNewRecord (records, recordsIndex, newRecord) {
@@ -397,8 +405,8 @@ define(
 
 			var recordsIndexLine = recordsIndex[newRecord.getTargetState()];
 
-			for (var currentRecordId = 0; currentRecordId < recordsIndexLine.length; ++ currentRecordId) {
-				var currentRecord = recordsIndexLine[currentRecordId];
+			for (var currentRecordId = 0; currentRecordId < recordsIndexLine.records.length; ++ currentRecordId) {
+				var currentRecord = recordsIndexLine.records[currentRecordId];
 
 				if (newRecord.isExtensionOf(currentRecord)) {
 					// Is an extension of an existing tail record
@@ -411,8 +419,26 @@ define(
 			// Check for loops
 			// ALSO check for EXTENSIONS
 			if ((isAlternative) && (!newRecord.hasLoops())) {
-				records.push(newRecord);
-				recordsIndexLine.push(newRecord);
+
+				if (0 === recordsIndexLine.nextRecords.length) {
+					records.push(newRecord);
+				} else {
+
+					var nextRecordsCount = recordsIndexLine.nextRecords.length;
+
+					for (var nextRecordId = 0; nextRecordId < nextRecordsCount; ++ nextRecordId) {
+						var nextRecord = recordsIndexLine.nextRecords[nextRecordId];
+
+						nextRecord.addPreviousRecord(newRecord);
+					}
+				}
+
+				recordsIndexLine.records.push(newRecord);
+
+				var previousIndexRecordsLine = recordsIndex[newRecord.getPreviousRecord().getTargetState()];
+
+				previousIndexRecordsLine.nextRecords.push(newRecord);
+
 			}
 		}
 
@@ -429,6 +455,14 @@ define(
 			// Create new tail records array
 			var nextTailRecords = [];
 
+			var tailRecordsAlternatives = [];
+
+			for (var currentTailRecordsAlternativesLine = 0;
+				 currentTailRecordsAlternativesLine <  traverser.transitions.length;
+				 ++ currentTailRecordsAlternativesLine) {
+
+				tailRecordsAlternatives[currentTailRecordsAlternativesLine] = [];
+			}
 			// Create the array for this generation's records
 			var records = tailRecords.slice();
 
@@ -436,14 +470,17 @@ define(
 			var recordsIndex = [];
 
 			for (var currentRecordsIndexLine = 0; currentRecordsIndexLine < traverser.transitions.length; ++ currentRecordsIndexLine) {
-				recordsIndex[currentRecordsIndexLine] = [];
+				recordsIndex[currentRecordsIndexLine] = {
+					'records': [],
+					'nextRecords': []
+				};
 			}
 
 			for (var currentTailRecordId = 0; currentTailRecordId < tailRecords.length; ++ currentTailRecordId) {
 
 				var currentTailRecord = tailRecords[currentTailRecordId];
 
-				recordsIndex[currentTailRecord.getTargetState()].push(currentTailRecord);
+				recordsIndex[currentTailRecord.getTargetState()].records.push(currentTailRecord);
 			}
 
 			// Create the counter to iterate the missing tails array
@@ -452,6 +489,8 @@ define(
 			do {
 				// Save the current record reference
 				var currentRecord = records[currentRecordId];
+
+				var nextRecordPreviousStates = [currentRecord];
 
 				// If a record is accepted and the input item is null, then the record is final if it ends up in a final state
 				if ((inputItem === null) && isStateFinal(traverser, currentRecord.getTargetState())) {
@@ -476,10 +515,10 @@ define(
 						// Add a new accept record for the accepted transition
 
 						// Create a new accept record
-						var newAcceptRecord = createAcceptRecord(currentRecord, inputItem, nextState);
+						var newAcceptRecord = createAcceptRecord(nextRecordPreviousStates, inputItem, nextState);
 
 						// Add the new accept record to the tail derivatives
-						insertNewTailRecord(nextTailRecords, newAcceptRecord);
+						insertNewTailRecord(nextTailRecords, recordsIndex, newAcceptRecord);
 
 						// Add a new missing record for a missing characters from accepted transported transition
 
@@ -490,7 +529,7 @@ define(
 						if (transportedTransitions.length > 1) {
 
 							// Create accepted record for transported transition except for the accepted transition
-							var newPartiallyMissingRecord = createPartiallyMissingRecord(currentRecord,
+							var newPartiallyMissingRecord = createPartiallyMissingRecord(nextRecordPreviousStates,
 								transportedTransitions, inputItem, nextState);
 
 							// Add the new partially accepted record to the missing records array, only check for loops
@@ -522,7 +561,7 @@ define(
 							var currentTransportedTransitionState = parseInt(currentTransportedTransitionKey);
 
 							// Create accepted record for transported transition
-							var nextMissingRecord = createMissingRecord(currentRecord, currentTransportedTransition, currentTransportedTransitionState);
+							var nextMissingRecord = createMissingRecord(nextRecordPreviousStates, currentTransportedTransition, currentTransportedTransitionState);
 
 							// Add the new partially accepted record to the missing records array, only check for loops
 							insertNewRecord(records, recordsIndex, nextMissingRecord);

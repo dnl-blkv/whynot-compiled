@@ -11,10 +11,10 @@ define(
 	function() {
 		'use strict';
 
-		function Record (previousRecord, targetState, characters, accepted) {
+		function Record (previousRecords, targetState, characters, accepted) {
 
 			// Define previous record pointer
-			this.previousRecord = previousRecord;
+			this.previousRecords = previousRecords;
 
 			// Define target state
 			this.targetState = targetState || 0;
@@ -32,57 +32,239 @@ define(
 			this.acceptedCount = 0;
 
 			// If the previous record is defined
-			if (this.getPreviousRecord() !== null) {
+			if (this.getPreviousRecords().length > 0) {
 
-				// Copy the accepted count
-				this.missingCount = this.getPreviousRecord().getMissingCount();
+				var firstPreviousRecord = this.getPreviousRecord();
 
-				// Copy the accepted count
-				this.acceptedCount = this.getPreviousRecord().getAcceptedCount();
+				if (firstPreviousRecord) {
 
-				// Increase the corresponding counter
-				this.accepted ? ++ this.acceptedCount : ++ this.missingCount;
+					// Copy the accepted count
+					this.missingCount = firstPreviousRecord.getMissingCount();
+
+					// Copy the accepted count
+					this.acceptedCount = firstPreviousRecord.getAcceptedCount();
+
+					// Increase the corresponding counter
+					this.accepted ? ++ this.acceptedCount : ++ this.missingCount;
+				}
 			}
 		}
 
 		Record.prototype.getPreviousRecord = function () {
-			return this.previousRecord;
+			return this.previousRecords[0];
+		};
+
+		Record.prototype.setPreviousRecords = function (previousRecords) {
+			this.previousRecords = previousRecords;
+		};
+
+		Record.prototype.getPreviousRecords = function () {
+			return this.previousRecords;
+		};
+
+		Record.prototype.addPreviousRecord = function (alternative) {
+			this.previousRecords.push(alternative);
 		};
 
 		Record.prototype.getCharacters = function () {
 			return this.characters;
 		};
 
+		Record.prototype.getAccepted = function () {
+			return this.accepted;
+		};
+
+		Record.prototype.getTargetState = function () {
+			return this.targetState;
+		};
+
+		Record.prototype.getMissingCount = function () {
+			return this.missingCount;
+		};
+
+		Record.prototype.getAcceptedCount = function () {
+			return this.acceptedCount;
+		};
+
+		Record.prototype.getTotalCount = function () {
+			return this.getAcceptedCount() + this.getMissingCount();
+		};
+
+		Record.prototype.isHead = function () {
+			return (this.getPreviousRecords().length === 0);
+		};
+
+		/**
+		 * Find a possible base for which this records serves an extension in ancestors chain of another record.
+		 *
+		 * @param olderRecord
+		 * @returns {*}
+		 */
+		Record.prototype.findBaseCandidate = function (olderRecord) {
+
+			var baseCandidate = olderRecord;
+
+			var baseCandidatesQueue = [olderRecord];
+
+			var baseCandidateId = 0;
+
+			while (baseCandidateId < baseCandidatesQueue.length) {
+
+				baseCandidate = baseCandidatesQueue[baseCandidateId];
+
+				while ((baseCandidate) &&
+				(this.getAcceptedCount() <= baseCandidate.getAcceptedCount())) {
+
+					if ((baseCandidate.getAcceptedCount() === this.getAcceptedCount()) &&
+						(baseCandidate.getTargetState() === this.getTargetState())) {
+						return baseCandidate;
+					}
+
+					var previousRecords = baseCandidate.getPreviousRecords();
+
+					var previousRecordsCount = previousRecords.length;
+
+					for (var previousRecordId = 1; previousRecordId < previousRecordsCount; ++ previousRecordId) {
+						var previousRecord = previousRecords[previousRecordId];
+
+						baseCandidatesQueue.splice(baseCandidateId + previousRecordId + 1, 0, previousRecord.getPreviousRecord());
+					}
+
+					baseCandidate = previousRecords[0];
+
+				}
+
+				++ baseCandidateId;
+			}
+
+			return null;
+		};
+
+		Record.prototype.hasLoops = function () {
+
+			// Save the current state
+			var currentState = this.getTargetState();
+
+			// Save the earlier state reference
+			var earlierRecord = this.getPreviousRecord();
+
+			// Create the earlier records queue
+			var earlierRecordsQueue = [earlierRecord];
+
+			// Define the Id of the next item to get from the queue
+			var earlierRecordId = 0;
+
+			// If earlier record exists
+			if (!this.getAccepted()) {
+
+				while (earlierRecordId < earlierRecordsQueue.length) {
+
+					earlierRecord = earlierRecordsQueue[earlierRecordId];
+
+					while (earlierRecord) {
+
+						var earlierState = earlierRecord.getTargetState();
+
+						if (earlierState === currentState) {
+							return true;
+						}
+
+						if ((earlierRecord.getAccepted()) &&
+							(earlierRecordId === (earlierRecordsQueue.length - 1))) {
+							return false;
+						}
+
+						var previousRecords = earlierRecord.getPreviousRecords();
+
+						// Add other previous records to the queue
+						var previousRecordsCount = previousRecords.length;
+
+						if (1 < previousRecordsCount) {
+							for (var previousRecordId = 0; previousRecordId < previousRecordsCount; ++ previousRecordId) {
+								var previousRecord = previousRecords[previousRecordId];
+
+								// TODO: Replace with more efficient method
+								earlierRecordsQueue.splice(earlierRecordId + previousRecordId + 1, 0, previousRecord);
+							}
+
+							++ earlierRecordId;
+						}
+
+
+						// Go to the previous record
+						earlierRecord = previousRecords[0];
+					}
+
+					// Go to the next record in queue
+					++ earlierRecordId;
+				}
+			}
+		};
+
 		// Perform check going back from the checked record and similarly back from candidateRecord
 		// A "missing" character in candidate record means the extension is not useless
-		Record.prototype.isExtensionOf = function (baseCandidate) {
+		Record.prototype.isExtensionOf = function (base) {
 
-			var baseCandidateAncestor = baseCandidate;
+			var pairsQueue = [{
+				'base': base,
+				'extensionCandidate': this
+			}];
+
+			var pairId = 0;
+
+			var baseAncestor = base;
 
 			var extensionCandidateAncestor = this;
 
-			// Loop until a common ancestor discovered
-			while (baseCandidateAncestor !== extensionCandidateAncestor) {
+			while (pairId < pairsQueue.length) {
 
-				if ((baseCandidateAncestor === null) ||
-					(extensionCandidateAncestor === null) ||
-					(extensionCandidateAncestor.getTotalCount() < baseCandidateAncestor.getTotalCount())) {
+				baseAncestor = pairsQueue[pairId].base;
+				extensionCandidateAncestor = pairsQueue[pairId].extensionCandidate;
 
-					if (baseCandidateAncestor === null) {
+				// Loop until a common ancestor discovered
+				while (baseAncestor !== extensionCandidateAncestor) {
 
-						// Extension was discovered
-						return true;
+					if ((baseAncestor === null) ||
+						(extensionCandidateAncestor === null) ||
+						(extensionCandidateAncestor.getTotalCount() < baseAncestor.getTotalCount())) {
+
+						if (baseAncestor === null) {
+
+							// Extension was discovered
+							// Immediately return true
+							return true;
+						}
+
+						// Alternative was discovered
+						// Only return false if in the very last variant
+						if (pairId === (pairsQueue.length - 1)) {
+							return false;
+						} else {
+							break;
+						}
 					}
 
-					// Alternative was discovered
-					return false;
+					if (extensionCandidateAncestor.isPartialOf(baseAncestor)) {
+						var previousRecords = baseAncestor.getPreviousRecords();
+
+						var previousRecordsCount = previousRecords.length;
+
+						for (var previousRecordId = 1; previousRecordId < previousRecordsCount; ++ previousRecordId) {
+							var previousRecord = previousRecords[previousRecordId];
+
+							pairsQueue.push({
+								'base': previousRecord,
+								'extensionCandidate': extensionCandidateAncestor.getPreviousRecords()[0]
+							})
+						}
+
+						baseAncestor = previousRecords[0];
+					}
+
+					extensionCandidateAncestor = extensionCandidateAncestor.getPreviousRecords()[0];
 				}
 
-				if (extensionCandidateAncestor.isPartialOf(baseCandidateAncestor)) {
-					baseCandidateAncestor = baseCandidateAncestor.getPreviousRecord();
-				}
-
-				extensionCandidateAncestor = extensionCandidateAncestor.getPreviousRecord();
+				++ pairId;
 			}
 
 			// Extension was discovered
@@ -107,7 +289,7 @@ define(
 
 			for (var characterId = 0; characterId < charactersCount; ++ characterId) {
 				if (characters[characterId] !== anotherCharacters[characterId + missesCount]) {
-					++missesCount;
+					++ missesCount;
 					if ((missesCount === 1) && (charactersCount === 1) || (missesCount > 1)) {
 						return false;
 					}
@@ -115,65 +297,6 @@ define(
 			}
 
 			return true;
-		};
-
-		Record.prototype.hasLoops = function () {
-
-			// Define a loops presence flag
-			var hasLoops = false;
-
-			// Save the current state
-			var currentState = this.getTargetState();
-
-			// Save the earlier state reference
-			var earlierRecord = this.getPreviousRecord();
-
-			// If earlier record exists
-			if (!this.getAccepted()) {
-				while (earlierRecord !== null) {
-					var earlierState = earlierRecord.getTargetState();
-
-					if (earlierState === currentState) {
-
-						hasLoops = true;
-
-						break;
-					}
-
-					if (earlierRecord.getAccepted()) {
-						break;
-					}
-
-					earlierRecord = earlierRecord.getPreviousRecord();
-				}
-			}
-
-			// Return the flag determining the loops presence
-			return hasLoops;
-		};
-
-		Record.prototype.getAccepted = function () {
-			return this.accepted;
-		};
-
-		Record.prototype.getTargetState = function () {
-			return this.targetState;
-		};
-
-		Record.prototype.getMissingCount = function () {
-			return this.missingCount;
-		};
-
-		Record.prototype.getAcceptedCount = function () {
-			return this.acceptedCount;
-		};
-
-		Record.prototype.getTotalCount = function () {
-			return this.getAcceptedCount() + this.getMissingCount();
-		};
-
-		Record.prototype.isHead = function () {
-			return this.getPreviousRecord() === null;
 		};
 
 		return Record;
