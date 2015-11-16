@@ -387,16 +387,31 @@ define(
 		 */
 		function insertNewTailRecord (tailRecords, recordsIndex, newTailRecord) {
 
-			var insertionIndex = findInsertionIndex(tailRecords, newTailRecord.getMissingCount());
+			var baseRecordId = -1;
 
-			tailRecords.splice(insertionIndex, 0, newTailRecord);
+			// Only add if unique
+			for (var tailRecordId = 0; tailRecordId < tailRecordId.length; ++ tailRecordId) {
+				if (tailRecords[tailRecordId][0].getTargetState() === newTailRecord.getTargetState()) {
+					baseRecordId = tailRecordId;
+					break;
+				}
+			}
 
+			if (baseRecordId === -1) {
+				tailRecords.push([newTailRecord]);
+			} else {
+
+				var insertionIndex = findInsertionIndex(tailRecords[tailRecordId], newTailRecord.getMissingCount());
+
+				tailRecords.splice(insertionIndex, 0, newTailRecord);
+			}
+
+			// TODO: do the following in the NEXT generation
 			// Add the new record as "next" for its previous records
-			var previousState = newTailRecord.getPreviousRecord().getTargetState();
+			var previousIndexRecordsLine = recordsIndex[newTailRecord.getPreviousRecord().getTargetState()];
+			console.log(newTailRecord, previousIndexRecordsLine.records);
 
-			var previousIndexRecordsLine = recordsIndex[previousState];
-
-			previousIndexRecordsLine.nextRecords.push(newTailRecord);
+			newTailRecord.setPreviousRecords(previousIndexRecordsLine.records);
 		}
 
 		function insertNewRecord (records, recordsIndex, newRecord) {
@@ -417,20 +432,10 @@ define(
 			}
 
 			// Check for loops
-			// ALSO check for EXTENSIONS
 			if ((isAlternative) && (!newRecord.hasLoops())) {
 
-				if (0 === recordsIndexLine.nextRecords.length) {
+				if (0 === recordsIndexLine.records.length) {
 					records.push(newRecord);
-				} else {
-
-					var nextRecordsCount = recordsIndexLine.nextRecords.length;
-
-					for (var nextRecordId = 0; nextRecordId < nextRecordsCount; ++ nextRecordId) {
-						var nextRecord = recordsIndexLine.nextRecords[nextRecordId];
-
-						nextRecord.addPreviousRecord(newRecord);
-					}
 				}
 
 				recordsIndexLine.records.push(newRecord);
@@ -439,7 +444,30 @@ define(
 
 				previousIndexRecordsLine.nextRecords.push(newRecord);
 
+				newRecord.setPreviousRecords(previousIndexRecordsLine.records);
 			}
+		}
+
+		function createRecordsIndex (traverser, tailRecords) {
+
+			var recordsIndex = [];
+
+			for (var currentRecordsIndexLine = 0; currentRecordsIndexLine < traverser.transitions.length; ++ currentRecordsIndexLine) {
+				recordsIndex[currentRecordsIndexLine] = {
+					'records': [],
+					'nextRecords': []
+				};
+			}
+
+			for (var tailRecordId = 0; tailRecordId < tailRecords.length; ++ tailRecordId) {
+
+				var currentTailAlternatives = tailRecords[tailRecordId];
+
+				recordsIndex[currentTailAlternatives[0].getTargetState()].records =
+					recordsIndex[currentTailAlternatives[0].getTargetState()].records.concat(currentTailAlternatives);
+			}
+
+			return recordsIndex;
 		}
 
 		/**
@@ -453,35 +481,20 @@ define(
 		function processTailRecords (traverser, inputItem, tailRecords) {
 
 			// Create new tail records array
-			var nextTailRecords = [];
-
-			var tailRecordsAlternatives = [];
-
-			for (var currentTailRecordsAlternativesLine = 0;
-				 currentTailRecordsAlternativesLine <  traverser.transitions.length;
-				 ++ currentTailRecordsAlternativesLine) {
-
-				tailRecordsAlternatives[currentTailRecordsAlternativesLine] = [];
-			}
-			// Create the array for this generation's records
-			var records = tailRecords.slice();
+			var nextTailRecords = [],
+				tailRecordId;
 
 			// Create the records index
-			var recordsIndex = [];
+			var recordsIndex = createRecordsIndex(traverser, tailRecords);
 
-			for (var currentRecordsIndexLine = 0; currentRecordsIndexLine < traverser.transitions.length; ++ currentRecordsIndexLine) {
-				recordsIndex[currentRecordsIndexLine] = {
-					'records': [],
-					'nextRecords': []
-				};
+			var miniTailRecords = [];
+
+			for (tailRecordId = 0; tailRecordId < tailRecords.length; ++ tailRecordId) {
+				miniTailRecords[tailRecordId] = tailRecords[tailRecordId][0];
 			}
 
-			for (var currentTailRecordId = 0; currentTailRecordId < tailRecords.length; ++ currentTailRecordId) {
-
-				var currentTailRecord = tailRecords[currentTailRecordId];
-
-				recordsIndex[currentTailRecord.getTargetState()].records.push(currentTailRecord);
-			}
+			// Create the array for this generation's records
+			var records = miniTailRecords.slice();
 
 			// Create the counter to iterate the missing tails array
 			var currentRecordId = 0;
@@ -495,6 +508,15 @@ define(
 				// If a record is accepted and the input item is null, then the record is final if it ends up in a final state
 				if ((inputItem === null) && isStateFinal(traverser, currentRecord.getTargetState())) {
 					saveFinalRecord(traverser, currentRecord);
+
+					if (currentRecordId < tailRecords.length) {
+
+						var currentTailAlternatives = tailRecords[currentRecordId];
+
+						for (var tailAlternativeId = 0; tailAlternativeId < currentTailAlternatives.length; ++ tailAlternativeId) {
+							saveFinalRecord(traverser, currentTailAlternatives[currentRecordId]);
+						}
+					}
 
 				} else {
 
@@ -595,7 +617,7 @@ define(
 			var initialRecord = createInitialRecord(this);
 
 			// Define the tail records
-			var tailRecords = [initialRecord];
+			var tailRecords = [[initialRecord]];
 
 			// Loop over all the possible strings accepted by the language
 			do {

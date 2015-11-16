@@ -258,6 +258,45 @@ define(
 				return processedResults;
 			}
 
+			function restoreMergedResult (result) {
+				var flatResults = [[]];
+
+				var currentFlatResult = flatResults[0];
+
+				var branchId = 0;
+
+				var branches = [result];
+
+				var currentBranch = result;
+
+				while (branchId < branches.length) {
+					currentBranch = branches[branchId];
+
+					currentFlatResult = flatResults[branchId];
+
+					while (currentBranch.getPreviousRecords().length > 0) {
+
+						var previousRecords = currentBranch.getPreviousRecords();
+
+						currentFlatResult.push(currentBranch.getCharacters());
+
+						currentBranch = previousRecords[0];
+
+						var previousRecordsCount = previousRecords.length;
+
+						for (var previousRecordId = 1; previousRecordId < previousRecordsCount; ++ previousRecordId) {
+							var previousRecord = previousRecords[previousRecordId];
+							flatResults.push(currentFlatResult.slice());
+							branches.push(previousRecord);
+						}
+					}
+
+					++ branchId;
+				}
+
+				return flatResults;
+			}
+
 			// Testing with regular expressions
 			// Currently regular expressions converter supports the following elements:
 			// '(' and ')' for grouping
@@ -344,6 +383,8 @@ define(
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('a((e(b|c|d)*)|(g(b|c|f)*))*h');
 
+					console.log('loop');
+
 					var inputString = 'cbcbfcbcbecbcbfcbcbe';
 
 					console.log(traverser);
@@ -353,7 +394,7 @@ define(
 					console.timeEnd('star-height-2-single');
 
 					console.log(results);
-					//
+					////
 					//console.log('Regex: a((e(b|c|d)*)|(g(b|c|f)*))*h');
 					//console.log('Input: ' + inputString);
 					//console.log(flattenResults(results));
