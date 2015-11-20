@@ -258,7 +258,9 @@ define(
 				return processedResults;
 			}
 
-			function restoreMergedResult (result) {
+			function restoreMergedResult (results) {
+				var result = results[0];
+
 				var flatResults = [[]];
 
 				var currentFlatResult = flatResults[0];
@@ -270,11 +272,12 @@ define(
 				var currentBranch = result;
 
 				while (branchId < branches.length) {
+
 					currentBranch = branches[branchId];
 
 					currentFlatResult = flatResults[branchId];
 
-					while (currentBranch.getPreviousRecords().length > 0) {
+					while (0 < currentBranch.getPreviousRecords().length) {
 
 						var previousRecords = currentBranch.getPreviousRecords();
 
@@ -319,7 +322,7 @@ define(
 					// Check for partially matching result
 					var traverser = compileRegexTraverser('(a|(bc)|(pbcx))d(e|f)');
 
-					console.log('here', traverser.execute(createInput('d')));
+					console.log('abcdef: ', traverser.execute(createInput('d')));
 
 					//chai.expect(processResults(traverser.execute(createInput('ad')))).to.deep.equal([
 					//	[['a'], ['d'], ['e', 'f']]
@@ -385,7 +388,7 @@ define(
 
 					console.log('loop');
 
-					var inputString = 'cbcbfcbcbecbcbfcbcbe';
+					var inputString = 'cbcbf';
 
 					console.log(traverser);
 

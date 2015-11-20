@@ -86,36 +86,6 @@ define(
 				chai.expect(loopingBranch.hasLoops()).to.equal(true);
 			});
 
-			it('can find base candidates in alternatives', function () {
-				var initialRecord = createInitialRecord();
-
-				// Create the main branch
-				var mainBranch = createMissingRecord([initialRecord], ['a'], 1);
-
-				// Create the short side branch
-				var shortSideBranch = createMissingRecord([mainBranch], ['b'], 2);
-				shortSideBranch = createAcceptRecord([shortSideBranch], 'd', 5);
-
-				// Create the long side branch
-				var longSideBranch = createMissingRecord([mainBranch], ['e'], 4);
-				longSideBranch = createAcceptRecord([longSideBranch], 'd', 6);
-				longSideBranch = createMissingRecord([longSideBranch], ['c'], 3);
-
-				// Continue the main branch
-				mainBranch = createAcceptRecord([mainBranch], 'd', 3);
-
-				var expectedLongSideBranchBase = mainBranch;
-
-				// Continue the main branch
-				mainBranch = createMissingRecord([mainBranch], ['b'], 5);
-
-				// Finish the main branch and merge the side branch into it
-				mainBranch = createMissingRecord([mainBranch, shortSideBranch], 'f', 7);
-
-				// Check
-				chai.expect(longSideBranch.findBaseCandidate(mainBranch)).to.deep.equal(expectedLongSideBranchBase);
-			});
-
 			function restoreMergedResult (result) {
 				var flatResults = [[]];
 

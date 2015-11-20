@@ -30,36 +30,30 @@ define(
 			// Define the conventional transitions table
 			this.transitions = biverseDFA.transitions;
 
-			// Define the transported transitions table
-			this.transportedTransitions = transportTransitions(biverseDFA.transitions);
+			// Define the transposed transitions table
+			this.transposedTransitions = transposeTransitions(biverseDFA.transitions);
 
 			// Define the final states
 			this.finalStates = biverseDFA.finalStates;
-
-			// Define the input buffer
-			this.inputBuffer = [];
-
-			// Define the indicator of input completeness
-			this.inputOver = false;
 
 			// Define the final records
 			this.finalRecords = [];
 		}
 
 		/**
-		 * Create transported transition table out of a given transition table.
+		 * Create transposed transition table out of a given transition table.
 		 *
 		 * @param transitions
 		 * @returns {Array}
 		 */
-		function transportTransitions (transitions) {
+		function transposeTransitions (transitions) {
 
-			var transportedTransitions = [];
+			var transposedTransitions = [];
 
 			var statesCount = transitions.length;
 
 			for (var stateNumber = 0; stateNumber < statesCount; stateNumber ++) {
-				transportedTransitions[stateNumber] = {};
+				transposedTransitions[stateNumber] = {};
 
 				var stateTransitionKeys = Object.keys(transitions[stateNumber]);
 
@@ -72,86 +66,15 @@ define(
 
 					var transitionString = transition + '';
 
-					if (transportedTransitions[stateNumber][transitionString] === undefined) {
-						transportedTransitions[stateNumber][transitionString] = [];
+					if (transposedTransitions[stateNumber][transitionString] === undefined) {
+						transposedTransitions[stateNumber][transitionString] = [];
 					}
 
-					transportedTransitions[stateNumber][transitionString].push(stateTransitionKey);
+					transposedTransitions[stateNumber][transitionString].push(stateTransitionKey);
 				}
 			}
 
-			return transportedTransitions;
-		}
-
-		/**
-		 * Get and buffer the next input item
-		 *
-		 * @param traverser
-		 * @param input
-		 */
-		function saveNextInputItem (traverser, input) {
-
-			// If input is not yet over
-			if (!isInputOver(traverser)) {
-
-				// Get the first input item
-				var inputItem = input();
-
-				// If next input exists
-				if (inputItem !== null) {
-
-					// Save input item to the buffer
-					traverser.inputBuffer.push(inputItem);
-				} else {
-
-					// State that input is over
-					traverser.inputOver = true;
-				}
-			}
-		}
-
-		/**
-		 * Checks whether or not the input is over.
-		 *
-		 * @param traverser
-		 * @returns {boolean|*}
-		 */
-		function isInputOver (traverser) {
-			return traverser.inputOver;
-		}
-
-		/**
-		 * Get an input item by its order in the buffer.
-		 *
-		 * @param traverser
-		 * @param id
-		 * @returns {*}
-		 */
-		function getInputItemById (traverser, id) {
-			return traverser.inputBuffer[id];
-		}
-
-		/**
-		 * Returns current size of the input buffer.
-		 *
-		 * @param traverser
-		 * @returns {Number}
-		 */
-		function getInputBufferSize (traverser) {
-			return traverser.inputBuffer.length;
-		}
-
-		/**
-		 * Reset the input buffer.
-		 *
-		 * @param traverser
-		 */
-		function resetInputBuffer (traverser) {
-			// Reset the input buffer
-			traverser.inputBuffer = [];
-
-			// Reset the input over indicator
-			traverser.inputOver = false;
+			return transposedTransitions;
 		}
 
 		/**
@@ -202,9 +125,6 @@ define(
 		 * @param traverser
 		 */
 		function reset (traverser) {
-
-			// Reset the input buffer
-			resetInputBuffer(traverser);
 
 			// Reset the final records
 			resetFinalRecords(traverser);
@@ -297,7 +217,7 @@ define(
 		 */
 		function createPartiallyMissingRecord (previousRecords, characters, excludedCharacter, targetState) {
 
-			// Save the next state index in the current transported transition
+			// Save the next state index in the current transposed transition
 			var excludedCharacterIndex = characters.indexOf(excludedCharacter);
 
 			// Create array of accepted characters
@@ -316,14 +236,14 @@ define(
 		}
 
 		/**
-		 * Get transported transitions for a state.
+		 * Get transposed transitions for a state.
 		 *
 		 * @param traverser
 		 * @param currentState
 		 * @returns {*}
 		 */
-		function getStateTransportedTransitions (traverser, currentState) {
-			return traverser.transportedTransitions[currentState];
+		function getStateTransposedTransitions (traverser, currentState) {
+			return traverser.transposedTransitions[currentState];
 		}
 
 		/**
@@ -381,37 +301,53 @@ define(
 		/**
 		 * Insert a newly generated tail record to the latest tail records level
 		 *
-		 * @param tailRecords
+		 * @param groupedTailRecords
 		 * @param recordsIndex
 		 * @param newTailRecord
 		 */
-		function insertNewTailRecord (tailRecords, recordsIndex, newTailRecord) {
+		function insertNewTailRecord (groupedTailRecords, recordsIndex, newTailRecord) {
 
-			var baseRecordId = -1;
+			var groupId = -1;
+
+			var isAlternative = true;
 
 			// Only add if unique
-			for (var tailRecordId = 0; tailRecordId < tailRecordId.length; ++ tailRecordId) {
-				if (tailRecords[tailRecordId][0].getTargetState() === newTailRecord.getTargetState()) {
-					baseRecordId = tailRecordId;
+			for (var tailRecordsGroupId = 0; tailRecordsGroupId < groupedTailRecords.length; ++ tailRecordsGroupId) {
+				if (groupedTailRecords[tailRecordsGroupId][0].getTargetState() === newTailRecord.getTargetState()) {
+					groupId = tailRecordsGroupId;
 					break;
 				}
 			}
 
-			if (baseRecordId === -1) {
-				tailRecords.push([newTailRecord]);
+			if (groupId === -1) {
+				groupedTailRecords.push([newTailRecord]);
 			} else {
+				var group = groupedTailRecords[groupId];
 
-				var insertionIndex = findInsertionIndex(tailRecords[tailRecordId], newTailRecord.getMissingCount());
+				for (var baseRecordId = 0; baseRecordId < group.length; ++ baseRecordId) {
+					var currentBaseRecord = group[baseRecordId];
 
-				tailRecords.splice(insertionIndex, 0, newTailRecord);
+					if (newTailRecord.isExtensionOf(currentBaseRecord)) {
+						isAlternative = false;
+
+						break;
+					}
+				}
+
+				if (isAlternative) {
+
+					var insertionIndex = findInsertionIndex(group, newTailRecord.getMissingCount());
+
+					group.splice(insertionIndex, 0, newTailRecord);
+				}
 			}
 
-			// TODO: do the following in the NEXT generation
-			// Add the new record as "next" for its previous records
-			var previousIndexRecordsLine = recordsIndex[newTailRecord.getPreviousRecord().getTargetState()];
-			console.log(newTailRecord, previousIndexRecordsLine.records);
+			if (isAlternative) {
+				// Add the new record as "next" for its previous records
+				var previousIndexRecordsLine = recordsIndex[newTailRecord.getPreviousRecord().getTargetState()];
 
-			newTailRecord.setPreviousRecords(previousIndexRecordsLine.records);
+				newTailRecord.setPreviousRecords(previousIndexRecordsLine);
+			}
 		}
 
 		function insertNewRecord (records, recordsIndex, newRecord) {
@@ -420,8 +356,8 @@ define(
 
 			var recordsIndexLine = recordsIndex[newRecord.getTargetState()];
 
-			for (var currentRecordId = 0; currentRecordId < recordsIndexLine.records.length; ++ currentRecordId) {
-				var currentRecord = recordsIndexLine.records[currentRecordId];
+			for (var currentRecordId = 0; currentRecordId < recordsIndexLine.length; ++ currentRecordId) {
+				var currentRecord = recordsIndexLine[currentRecordId];
 
 				if (newRecord.isExtensionOf(currentRecord)) {
 					// Is an extension of an existing tail record
@@ -434,17 +370,17 @@ define(
 			// Check for loops
 			if ((isAlternative) && (!newRecord.hasLoops())) {
 
-				if (0 === recordsIndexLine.records.length) {
+				if (0 === recordsIndexLine.length) {
 					records.push(newRecord);
 				}
 
-				recordsIndexLine.records.push(newRecord);
+				// TODO: the bug is in the loops in merged records
+
+				recordsIndexLine.push(newRecord);
 
 				var previousIndexRecordsLine = recordsIndex[newRecord.getPreviousRecord().getTargetState()];
 
-				previousIndexRecordsLine.nextRecords.push(newRecord);
-
-				newRecord.setPreviousRecords(previousIndexRecordsLine.records);
+				newRecord.setPreviousRecords(previousIndexRecordsLine);
 			}
 		}
 
@@ -453,18 +389,15 @@ define(
 			var recordsIndex = [];
 
 			for (var currentRecordsIndexLine = 0; currentRecordsIndexLine < traverser.transitions.length; ++ currentRecordsIndexLine) {
-				recordsIndex[currentRecordsIndexLine] = {
-					'records': [],
-					'nextRecords': []
-				};
+				recordsIndex[currentRecordsIndexLine] = [];
 			}
 
 			for (var tailRecordId = 0; tailRecordId < tailRecords.length; ++ tailRecordId) {
 
 				var currentTailAlternatives = tailRecords[tailRecordId];
 
-				recordsIndex[currentTailAlternatives[0].getTargetState()].records =
-					recordsIndex[currentTailAlternatives[0].getTargetState()].records.concat(currentTailAlternatives);
+				recordsIndex[currentTailAlternatives[0].getTargetState()] =
+					recordsIndex[currentTailAlternatives[0].getTargetState()].concat(currentTailAlternatives);
 			}
 
 			return recordsIndex;
@@ -500,10 +433,15 @@ define(
 			var currentRecordId = 0;
 
 			do {
+
 				// Save the current record reference
 				var currentRecord = records[currentRecordId];
 
-				var nextRecordPreviousStates = [currentRecord];
+				var nextRecordPreviousRecords = [currentRecord];
+
+				if (currentRecordId < miniTailRecords.length) {
+					nextRecordPreviousRecords = tailRecords[currentRecordId].slice();
+				}
 
 				// If a record is accepted and the input item is null, then the record is final if it ends up in a final state
 				if ((inputItem === null) && isStateFinal(traverser, currentRecord.getTargetState())) {
@@ -526,8 +464,8 @@ define(
 					// Get the next state for the record
 					var nextState = getNextState(traverser, currentState, inputItem);
 
-					// Save transported transitions for current state
-					var currentStateTransportedTransitions = getStateTransportedTransitions(traverser, currentState);
+					// Save transposed transitions for current state
+					var currentStateTransposedTransitions = getStateTransposedTransitions(traverser, currentState);
 
 					// Save the next state as a string index
 					var nextStateAsString = nextState + '';
@@ -537,22 +475,22 @@ define(
 						// Add a new accept record for the accepted transition
 
 						// Create a new accept record
-						var newAcceptRecord = createAcceptRecord(nextRecordPreviousStates, inputItem, nextState);
+						var newAcceptRecord = createAcceptRecord(nextRecordPreviousRecords, inputItem, nextState);
 
 						// Add the new accept record to the tail derivatives
 						insertNewTailRecord(nextTailRecords, recordsIndex, newAcceptRecord);
 
-						// Add a new missing record for a missing characters from accepted transported transition
+						// Add a new missing record for a missing characters from accepted transposed transition
 
-						// Save the transported transition to which current input item belongs
-						var transportedTransitions = currentStateTransportedTransitions[nextStateAsString];
+						// Save the transposed transition to which current input item belongs
+						var transposedTransitions = currentStateTransposedTransitions[nextStateAsString];
 
 						// If there are other possibilities to get to a required state except for the saved one
-						if (transportedTransitions.length > 1) {
+						if (transposedTransitions.length > 1) {
 
-							// Create accepted record for transported transition except for the accepted transition
-							var newPartiallyMissingRecord = createPartiallyMissingRecord(nextRecordPreviousStates,
-								transportedTransitions, inputItem, nextState);
+							// Create accepted record for transposed transition except for the accepted transition
+							var newPartiallyMissingRecord = createPartiallyMissingRecord(nextRecordPreviousRecords,
+								transposedTransitions, inputItem, nextState);
 
 							// Add the new partially accepted record to the missing records array, only check for loops
 							insertNewRecord(records, recordsIndex, newPartiallyMissingRecord);
@@ -561,29 +499,29 @@ define(
 
 					// Add the new missing records for all the other missing transitions
 
-					// Save transported transition keys
-					var transportedTransitionsKeys = Object.keys(currentStateTransportedTransitions);
+					// Save transposed transition keys
+					var transposedTransitionsKeys = Object.keys(currentStateTransposedTransitions);
 
-					// Save transported transitions amount
-					var transportedTransitionsCount = transportedTransitionsKeys.length;
+					// Save transposed transitions amount
+					var transposedTransitionsCount = transposedTransitionsKeys.length;
 
-					// Iterate over transported transitions
-					for (var transportedTransitionId = 0; transportedTransitionId < transportedTransitionsCount; ++transportedTransitionId) {
+					// Iterate over transposed transitions
+					for (var transposedTransitionId = 0; transposedTransitionId < transposedTransitionsCount; ++ transposedTransitionId) {
 
-						// Save current transported transition key
-						var currentTransportedTransitionKey = transportedTransitionsKeys[transportedTransitionId];
+						// Save current transposed transition key
+						var currentTransposedTransitionKey = transposedTransitionsKeys[transposedTransitionId];
 
-						// If we are not dealing with a previously processed transported transition
-						if (currentTransportedTransitionKey !== nextStateAsString) {
+						// If we are not dealing with a previously processed transposed transition
+						if (currentTransposedTransitionKey !== nextStateAsString) {
 
-							// Save reference to the current transported transition
-							var currentTransportedTransition = currentStateTransportedTransitions[currentTransportedTransitionKey];
+							// Save reference to the current transposed transition
+							var currentTransposedTransition = currentStateTransposedTransitions[currentTransposedTransitionKey];
 
-							// Save the current transported transition state
-							var currentTransportedTransitionState = parseInt(currentTransportedTransitionKey);
+							// Save the current transposed transition state
+							var currentTransposedTransitionState = parseInt(currentTransposedTransitionKey);
 
-							// Create accepted record for transported transition
-							var nextMissingRecord = createMissingRecord(nextRecordPreviousStates, currentTransportedTransition, currentTransportedTransitionState);
+							// Create accepted record for transposed transition
+							var nextMissingRecord = createMissingRecord(nextRecordPreviousRecords, currentTransposedTransition, currentTransposedTransitionState);
 
 							// Add the new partially accepted record to the missing records array, only check for loops
 							insertNewRecord(records, recordsIndex, nextMissingRecord);

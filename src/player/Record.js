@@ -94,52 +94,6 @@ define(
 			return (this.getPreviousRecords().length === 0);
 		};
 
-		/**
-		 * Find a possible base for which this records serves an extension in ancestors chain of another record.
-		 *
-		 * @param olderRecord
-		 * @returns {*}
-		 */
-		Record.prototype.findBaseCandidate = function (olderRecord) {
-
-			var baseCandidate = olderRecord;
-
-			var baseCandidatesQueue = [olderRecord];
-
-			var baseCandidateId = 0;
-
-			while (baseCandidateId < baseCandidatesQueue.length) {
-
-				baseCandidate = baseCandidatesQueue[baseCandidateId];
-
-				while ((baseCandidate) &&
-				(this.getAcceptedCount() <= baseCandidate.getAcceptedCount())) {
-
-					if ((baseCandidate.getAcceptedCount() === this.getAcceptedCount()) &&
-						(baseCandidate.getTargetState() === this.getTargetState())) {
-						return baseCandidate;
-					}
-
-					var previousRecords = baseCandidate.getPreviousRecords();
-
-					var previousRecordsCount = previousRecords.length;
-
-					for (var previousRecordId = 1; previousRecordId < previousRecordsCount; ++ previousRecordId) {
-						var previousRecord = previousRecords[previousRecordId];
-
-						baseCandidatesQueue.splice(baseCandidateId + previousRecordId + 1, 0, previousRecord.getPreviousRecord());
-					}
-
-					baseCandidate = previousRecords[0];
-
-				}
-
-				++ baseCandidateId;
-			}
-
-			return null;
-		};
-
 		Record.prototype.hasLoops = function () {
 
 			// Save the current state
