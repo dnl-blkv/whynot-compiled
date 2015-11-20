@@ -36,12 +36,6 @@ define(
 			// Define the final states
 			this.finalStates = biverseDFA.finalStates;
 
-			// Define the input buffer
-			this.inputBuffer = [];
-
-			// Define the indicator of input completeness
-			this.inputOver = false;
-
 			// Define the final records
 			this.finalRecords = [];
 		}
@@ -81,77 +75,6 @@ define(
 			}
 
 			return transportedTransitions;
-		}
-
-		/**
-		 * Get and buffer the next input item
-		 *
-		 * @param traverser
-		 * @param input
-		 */
-		function saveNextInputItem (traverser, input) {
-
-			// If input is not yet over
-			if (!isInputOver(traverser)) {
-
-				// Get the first input item
-				var inputItem = input();
-
-				// If next input exists
-				if (inputItem !== null) {
-
-					// Save input item to the buffer
-					traverser.inputBuffer.push(inputItem);
-				} else {
-
-					// State that input is over
-					traverser.inputOver = true;
-				}
-			}
-		}
-
-		/**
-		 * Checks whether or not the input is over.
-		 *
-		 * @param traverser
-		 * @returns {boolean|*}
-		 */
-		function isInputOver (traverser) {
-			return traverser.inputOver;
-		}
-
-		/**
-		 * Get an input item by its order in the buffer.
-		 *
-		 * @param traverser
-		 * @param id
-		 * @returns {*}
-		 */
-		function getInputItemById (traverser, id) {
-			return traverser.inputBuffer[id];
-		}
-
-		/**
-		 * Returns current size of the input buffer.
-		 *
-		 * @param traverser
-		 * @returns {Number}
-		 */
-		function getInputBufferSize (traverser) {
-			return traverser.inputBuffer.length;
-		}
-
-		/**
-		 * Reset the input buffer.
-		 *
-		 * @param traverser
-		 */
-		function resetInputBuffer (traverser) {
-			// Reset the input buffer
-			traverser.inputBuffer = [];
-
-			// Reset the input over indicator
-			traverser.inputOver = false;
 		}
 
 		/**
@@ -202,9 +125,6 @@ define(
 		 * @param traverser
 		 */
 		function reset (traverser) {
-
-			// Reset the input buffer
-			resetInputBuffer(traverser);
 
 			// Reset the final records
 			resetFinalRecords(traverser);
@@ -408,8 +328,6 @@ define(
 				}
 			}
 
-			// Check for loops
-			// ALSO check for EXTENSIONS
 			if ((isAlternative) && (!newRecord.hasLoops())) {
 				records.push(newRecord);
 				recordsIndexLine.push(newRecord);
